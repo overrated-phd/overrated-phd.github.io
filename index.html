@@ -278,10 +278,12 @@
             padding-right: 3px;
         }
 
-        .prob-value {
-            font-size: 8px;
-            color: white;
-            font-weight: bold;
+        .prob-bar-fill.highest {
+            background: #dc3545;
+        }
+
+        .prob-bar-fill.normal {
+            background: #6c9bd1;
         }
 
         .output-label {
@@ -491,7 +493,10 @@
             const selector = document.getElementById('imageSelector');
             selector.innerHTML = '';
 
+            console.log('Total samples:', sampleData.length);
+
             sampleData.forEach((sample, idx) => {
+                console.log(`Creating button for sample ${idx}`);
                 const div = document.createElement('div');
                 div.className = 'sample-image' + (idx === 0 ? ' active' : '');
                 div.onclick = () => selectSample(idx);
@@ -509,6 +514,8 @@
                 renderCanvas(canvas, sample.input, 0);
                 selector.appendChild(div);
             });
+            
+            console.log('Created', selector.children.length, 'sample buttons');
         }
 
         function selectSample(idx) {
