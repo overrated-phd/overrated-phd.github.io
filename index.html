@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TinyCNN Visualization</title>
+    <title>CNN Explainer - TinyCNN</title>
     <style>
         * {
             margin: 0;
@@ -14,6 +14,7 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
             background: #f5f5f5;
+            overflow-x: auto;
         }
 
         .header {
@@ -51,141 +52,237 @@
             color: white;
         }
 
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 40px 20px;
-        }
-
-        .controls {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 30px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-
-        .controls h3 {
-            margin-bottom: 15px;
-            color: #333;
-        }
-
-        .sample-selector {
+        .header-right {
             display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
         }
 
-        .sample-btn {
-            padding: 10px 20px;
-            background: #007bff;
-            color: white;
+        .icon-button {
+            background: transparent;
             border: none;
-            border-radius: 5px;
+            color: white;
             cursor: pointer;
-            font-size: 14px;
+            padding: 8px;
+            border-radius: 4px;
             transition: background 0.2s;
         }
 
-        .sample-btn:hover {
-            background: #0056b3;
+        .icon-button:hover {
+            background: rgba(255, 255, 255, 0.1);
         }
 
-        .sample-btn.active {
-            background: #28a745;
+        .icon-button svg {
+            width: 27.6px;
+            height: 27.6px;
+            display: block;
         }
 
-        .visualization {
+        .image-selector {
             background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-
-        .layer-container {
-            margin-bottom: 40px;
-            padding-bottom: 30px;
-            border-bottom: 2px solid #e0e0e0;
-        }
-
-        .layer-container:last-child {
-            border-bottom: none;
-        }
-
-        .layer-header {
+            padding: 20px;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .layer-title {
-            font-size: 22px;
-            font-weight: bold;
-            color: #333;
-        }
-
-        .layer-info {
-            font-size: 14px;
-            color: #666;
-        }
-
-        .feature-maps {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
             gap: 15px;
-            margin-top: 15px;
+            align-items: center;
+            border-bottom: 2px solid #e0e0e0;
+            overflow-x: auto;
         }
 
-        .feature-map {
-            text-align: center;
-        }
-
-        .feature-map canvas {
-            border: 1px solid #ddd;
+        .sample-image {
+            cursor: pointer;
+            border: 3px solid transparent;
             border-radius: 4px;
-            width: 100%;
-            height: auto;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .sample-image canvas {
+            display: block;
+            width: 64px;
+            height: 64px;
             image-rendering: pixelated;
         }
 
-        .feature-map-label {
-            font-size: 12px;
-            color: #666;
-            margin-top: 5px;
+        .sample-image:hover {
+            transform: scale(1.1);
         }
 
-        .prediction-box {
-            background: #f8f9fa;
+        .sample-image.active {
+            border-color: #007bff;
+            box-shadow: 0 4px 12px rgba(0,123,255,0.3);
+        }
+
+        .sample-label {
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 11px;
+            color: #666;
+            white-space: nowrap;
+        }
+
+        .visualization-container {
+            padding: 40px 20px;
+            min-width: 100%;
+            overflow-x: auto;
+        }
+
+        .network-flow {
+            display: flex;
+            gap: 40px;
+            align-items: center;
+            justify-content: center;
+            min-width: max-content;
+            position: relative;
             padding: 20px;
-            border-radius: 8px;
-            text-align: center;
         }
 
-        .prediction-label {
-            font-size: 18px;
+        .layer-column {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .layer-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #333;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+
+        .layer-subtitle {
+            font-size: 11px;
             color: #666;
+            text-align: center;
             margin-bottom: 10px;
         }
 
-        .prediction-value {
-            font-size: 48px;
+        .feature-maps-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            max-width: 200px;
+            justify-content: center;
+        }
+
+        .feature-map-item {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 5px;
+            position: relative;
+        }
+
+        .feature-map-item canvas {
+            display: block;
+            image-rendering: pixelated;
+        }
+
+        .feature-map-item:hover {
+            border-color: #007bff;
+            box-shadow: 0 2px 8px rgba(0,123,255,0.2);
+        }
+
+        .channel-label {
+            font-size: 9px;
+            color: #999;
+            text-align: center;
+            margin-top: 3px;
+        }
+
+        .arrow {
+            font-size: 40px;
+            color: #ccc;
+            user-select: none;
+        }
+
+        .output-box {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            text-align: center;
+            border: 2px solid #ddd;
+            min-width: 150px;
+        }
+
+        .output-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .output-digit {
+            font-size: 72px;
             font-weight: bold;
             color: #007bff;
+            line-height: 1;
+            margin: 10px 0;
+        }
+
+        .output-confidence {
+            font-size: 11px;
+            color: #999;
+            margin-top: 10px;
+        }
+
+        .true-label {
+            font-size: 11px;
+            color: #666;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid #eee;
         }
 
         .loading {
             text-align: center;
-            padding: 40px;
+            padding: 60px;
             color: #666;
+            font-size: 18px;
         }
 
         .error {
             background: #f8d7da;
             color: #721c24;
-            padding: 20px;
+            padding: 30px;
             border-radius: 8px;
-            margin: 20px;
+            margin: 40px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .controls {
+            background: white;
+            padding: 15px 20px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .control-label {
+            font-size: 13px;
+            color: #666;
+            font-weight: 600;
+        }
+
+        .zoom-controls button {
+            padding: 5px 12px;
+            margin: 0 3px;
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .zoom-controls button:hover {
+            background: #e0e0e0;
         }
     </style>
 </head>
@@ -200,41 +297,54 @@
                 intuition, structure, and applications of CNNs.</strong>
             </div>
         </div>
+        <div class="header-right">
+            <button class="icon-button" title="Article">
+                <svg fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/>
+                </svg>
+            </button>
+            <button class="icon-button" title="Video">
+                <svg fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>
+                </svg>
+            </button>
+            <button class="icon-button" title="GitHub">
+                <svg fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.17 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.167 22 16.418 22 12c0-5.523-4.477-10-10-10z"/>
+                </svg>
+            </button>
+        </div>
     </header>
 
-    <div class="container">
-        <div class="controls">
-            <h3>Select Sample Image</h3>
-            <div class="sample-selector" id="sampleSelector">
-                <!-- Buttons will be generated here -->
-            </div>
-        </div>
+    <div class="image-selector" id="imageSelector">
+        <!-- Sample images will be inserted here -->
+    </div>
 
-        <div id="content">
-            <div class="loading">Loading model and data...</div>
+    <div class="controls">
+        <span class="control-label">View:</span>
+        <div class="zoom-controls">
+            <button onclick="adjustZoom(0.9)">Zoom Out</button>
+            <button onclick="adjustZoom(1.1)">Zoom In</button>
+            <button onclick="adjustZoom('reset')">Reset</button>
         </div>
     </div>
 
+    <div id="content">
+        <div class="loading">Loading model and sample data...</div>
+    </div>
+
     <script>
-        let modelData = null;
         let sampleData = null;
         let currentSample = 0;
+        let zoomLevel = 1;
 
-        // Load JSON files
         async function loadData() {
             try {
-                const [configRes, samplesRes] = await Promise.all([
-                    fetch('model_config.json'),
-                    fetch('sample_data.json')
-                ]);
-
-                if (!configRes.ok || !samplesRes.ok) {
-                    throw new Error('Failed to load data files. Make sure model_config.json and sample_data.json are in the same directory.');
+                const samplesRes = await fetch('sample_data.json');
+                if (!samplesRes.ok) {
+                    throw new Error('Failed to load sample_data.json');
                 }
-
-                modelData = await configRes.json();
                 sampleData = await samplesRes.json();
-
                 initializeUI();
                 visualizeSample(0);
             } catch (error) {
@@ -242,176 +352,240 @@
                     <div class="error">
                         <strong>Error loading data:</strong> ${error.message}
                         <br><br>
-                        Please ensure the following files are in the same directory:
-                        <ul style="margin-top: 10px; margin-left: 20px;">
-                            <li>model_config.json</li>
-                            <li>sample_data.json</li>
-                        </ul>
+                        Please ensure <strong>sample_data.json</strong> is in the same directory.
                     </div>
                 `;
             }
         }
 
         function initializeUI() {
-            const selector = document.getElementById('sampleSelector');
+            const selector = document.getElementById('imageSelector');
             selector.innerHTML = '';
 
             sampleData.forEach((sample, idx) => {
-                const btn = document.createElement('button');
-                btn.className = 'sample-btn' + (idx === 0 ? ' active' : '');
-                btn.textContent = `Sample ${idx + 1} (Label: ${sample.label})`;
-                btn.onclick = () => {
-                    document.querySelectorAll('.sample-btn').forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    visualizeSample(idx);
-                };
-                selector.appendChild(btn);
+                const div = document.createElement('div');
+                div.className = 'sample-image' + (idx === 0 ? ' active' : '');
+                div.onclick = () => selectSample(idx);
+
+                const canvas = document.createElement('canvas');
+                canvas.width = 28;
+                canvas.height = 28;
+                div.appendChild(canvas);
+
+                const label = document.createElement('div');
+                label.className = 'sample-label';
+                label.textContent = `Label: ${sample.label}`;
+                div.appendChild(label);
+
+                renderCanvas(canvas, sample.input, 0);
+                selector.appendChild(div);
             });
         }
 
-        function visualizeSample(idx) {
+        function selectSample(idx) {
             currentSample = idx;
+            document.querySelectorAll('.sample-image').forEach((el, i) => {
+                el.classList.toggle('active', i === idx);
+            });
+            visualizeSample(idx);
+        }
+
+        function visualizeSample(idx) {
             const sample = sampleData[idx];
             const content = document.getElementById('content');
 
-            let html = '<div class="visualization">';
+            const conv1Shape = getShape(sample.activations.conv1);
+            const pool1Shape = getShape(sample.activations.pool1);
+            const conv2Shape = getShape(sample.activations.conv2);
+            const pool2Shape = getShape(sample.activations.pool2);
 
-            // Input Layer
-            html += createLayerHTML('Input Image', `28×28 grayscale`, 
-                sample.input, 1, 28, 28);
+            // Get prediction
+            const logits = sample.activations.output[0];
+            const predictedClass = logits.indexOf(Math.max(...logits));
+            const confidence = Math.max(...logits);
 
-            // Conv1 + ELU
-            if (sample.activations.conv1) {
-                const conv1Shape = getShape(sample.activations.conv1);
-                html += createLayerHTML('Conv Layer 1 + ELU', 
-                    `${conv1Shape[1]}×${conv1Shape[2]} × ${conv1Shape[0]} channels`,
-                    sample.activations.elu1, conv1Shape[0], conv1Shape[1], conv1Shape[2]);
-            }
-
-            // Pool1
-            if (sample.activations.pool1) {
-                const pool1Shape = getShape(sample.activations.pool1);
-                html += createLayerHTML('Max Pool 1', 
-                    `${pool1Shape[1]}×${pool1Shape[2]} × ${pool1Shape[0]} channels`,
-                    sample.activations.pool1, pool1Shape[0], pool1Shape[1], pool1Shape[2]);
-            }
-
-            // Conv2 + ELU
-            if (sample.activations.conv2) {
-                const conv2Shape = getShape(sample.activations.conv2);
-                html += createLayerHTML('Conv Layer 2 + ELU', 
-                    `${conv2Shape[1]}×${conv2Shape[2]} × ${conv2Shape[0]} channels`,
-                    sample.activations.elu2, conv2Shape[0], conv2Shape[1], conv2Shape[2]);
-            }
-
-            // Pool2
-            if (sample.activations.pool2) {
-                const pool2Shape = getShape(sample.activations.pool2);
-                html += createLayerHTML('Max Pool 2', 
-                    `${pool2Shape[1]}×${pool2Shape[2]} × ${pool2Shape[0]} channels`,
-                    sample.activations.pool2, pool2Shape[0], pool2Shape[1], pool2Shape[2]);
-            }
-
-            // Output
-            const output = sample.activations.output[0][0];
-            const prediction = output > 0 ? 1 : 0;
-            const confidence = Math.abs(output);
-            
-            html += `
-                <div class="layer-container">
-                    <div class="layer-header">
-                        <div class="layer-title">Output (Linear Layer)</div>
-                        <div class="layer-info">Binary Classification</div>
-                    </div>
-                    <div class="prediction-box">
-                        <div class="prediction-label">Predicted Class</div>
-                        <div class="prediction-value">${prediction}</div>
-                        <div class="prediction-label" style="margin-top: 10px;">
-                            Confidence: ${confidence.toFixed(4)}
+            let html = `
+                <div class="visualization-container">
+                    <div class="network-flow" style="transform: scale(${zoomLevel})">
+                        
+                        <!-- Input -->
+                        <div class="layer-column">
+                            <div class="layer-title">Input</div>
+                            <div class="layer-subtitle">(28, 28, 1)</div>
+                            <div class="feature-maps-grid">
+                                <div class="feature-map-item">
+                                    <canvas id="input" width="28" height="28"></canvas>
+                                </div>
+                            </div>
                         </div>
+
+                        <div class="arrow">→</div>
+
+                        <!-- Conv1 -->
+                        <div class="layer-column">
+                            <div class="layer-title">Conv 1</div>
+                            <div class="layer-subtitle">(28, 28, ${conv1Shape[0]})</div>
+                            <div class="feature-maps-grid">
+            `;
+
+            for (let c = 0; c < conv1Shape[0]; c++) {
+                html += `
+                    <div class="feature-map-item">
+                        <canvas id="conv1_${c}" width="28" height="28"></canvas>
+                        <div class="channel-label">ch ${c}</div>
+                    </div>
+                `;
+            }
+
+            html += `
+                            </div>
+                        </div>
+
+                        <div class="arrow">→</div>
+
+                        <!-- ELU + Pool1 -->
+                        <div class="layer-column">
+                            <div class="layer-title">ReLU + Pool</div>
+                            <div class="layer-subtitle">(14, 14, ${pool1Shape[0]})</div>
+                            <div class="feature-maps-grid">
+            `;
+
+            for (let c = 0; c < pool1Shape[0]; c++) {
+                html += `
+                    <div class="feature-map-item">
+                        <canvas id="pool1_${c}" width="14" height="14"></canvas>
+                        <div class="channel-label">ch ${c}</div>
+                    </div>
+                `;
+            }
+
+            html += `
+                            </div>
+                        </div>
+
+                        <div class="arrow">→</div>
+
+                        <!-- Conv2 -->
+                        <div class="layer-column">
+                            <div class="layer-title">Conv 2</div>
+                            <div class="layer-subtitle">(14, 14, ${conv2Shape[0]})</div>
+                            <div class="feature-maps-grid">
+            `;
+
+            for (let c = 0; c < conv2Shape[0]; c++) {
+                html += `
+                    <div class="feature-map-item">
+                        <canvas id="conv2_${c}" width="14" height="14"></canvas>
+                        <div class="channel-label">ch ${c}</div>
+                    </div>
+                `;
+            }
+
+            html += `
+                            </div>
+                        </div>
+
+                        <div class="arrow">→</div>
+
+                        <!-- ELU + Pool2 -->
+                        <div class="layer-column">
+                            <div class="layer-title">ReLU + Pool</div>
+                            <div class="layer-subtitle">(7, 7, ${pool2Shape[0]})</div>
+                            <div class="feature-maps-grid">
+            `;
+
+            for (let c = 0; c < pool2Shape[0]; c++) {
+                html += `
+                    <div class="feature-map-item">
+                        <canvas id="pool2_${c}" width="7" height="7"></canvas>
+                        <div class="channel-label">ch ${c}</div>
+                    </div>
+                `;
+            }
+
+            html += `
+                            </div>
+                        </div>
+
+                        <div class="arrow">→</div>
+
+                        <!-- Output -->
+                        <div class="layer-column">
+                            <div class="layer-title">Output</div>
+                            <div class="layer-subtitle">(10)</div>
+                            <div class="output-box">
+                                <div class="output-label">Prediction</div>
+                                <div class="output-digit">${predictedClass}</div>
+                                <div class="output-confidence">Confidence: ${confidence.toFixed(4)}</div>
+                                <div class="true-label">True Label: ${sample.label}</div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             `;
 
-            html += '</div>';
             content.innerHTML = html;
+            renderAllActivations(sample);
+        }
 
-            // Render all canvases
-            renderAllCanvases();
+        function renderAllActivations(sample) {
+            // Input
+            renderCanvas(document.getElementById('input'), sample.input, 0);
+
+            // Conv1
+            const conv1Shape = getShape(sample.activations.conv1);
+            for (let c = 0; c < conv1Shape[0]; c++) {
+                renderCanvas(document.getElementById(`conv1_${c}`), sample.activations.elu1, c);
+            }
+
+            // Pool1
+            const pool1Shape = getShape(sample.activations.pool1);
+            for (let c = 0; c < pool1Shape[0]; c++) {
+                renderCanvas(document.getElementById(`pool1_${c}`), sample.activations.pool1, c);
+            }
+
+            // Conv2
+            const conv2Shape = getShape(sample.activations.conv2);
+            for (let c = 0; c < conv2Shape[0]; c++) {
+                renderCanvas(document.getElementById(`conv2_${c}`), sample.activations.elu2, c);
+            }
+
+            // Pool2
+            const pool2Shape = getShape(sample.activations.pool2);
+            for (let c = 0; c < pool2Shape[0]; c++) {
+                renderCanvas(document.getElementById(`pool2_${c}`), sample.activations.pool2, c);
+            }
         }
 
         function getShape(arr) {
-            // arr is [batch, channels, height, width]
             if (arr[0] && arr[0][0] && arr[0][0][0]) {
                 return [arr[0].length, arr[0][0].length, arr[0][0][0].length];
             }
-            // For input: [channels, height, width]
             if (arr[0] && arr[0][0]) {
                 return [arr.length, arr[0].length, arr[0][0].length];
             }
             return [1, 28, 28];
         }
 
-        function createLayerHTML(title, info, data, channels, height, width) {
-            let html = `
-                <div class="layer-container">
-                    <div class="layer-header">
-                        <div class="layer-title">${title}</div>
-                        <div class="layer-info">${info}</div>
-                    </div>
-                    <div class="feature-maps">
-            `;
-
-            for (let c = 0; c < Math.min(channels, 16); c++) {
-                html += `
-                    <div class="feature-map">
-                        <canvas id="canvas_${title.replace(/\s+/g, '_')}_${c}" 
-                                width="${width}" height="${height}"
-                                data-channel="${c}"
-                                data-data="${encodeURIComponent(JSON.stringify(data))}">
-                        </canvas>
-                        <div class="feature-map-label">Channel ${c + 1}</div>
-                    </div>
-                `;
-            }
-
-            html += `
-                    </div>
-                </div>
-            `;
-            return html;
-        }
-
-        function renderAllCanvases() {
-            const canvases = document.querySelectorAll('canvas');
-            canvases.forEach(canvas => {
-                const channel = parseInt(canvas.dataset.channel);
-                const data = JSON.parse(decodeURIComponent(canvas.dataset.data));
-                renderFeatureMap(canvas, data, channel);
-            });
-        }
-
-        function renderFeatureMap(canvas, data, channel) {
+        function renderCanvas(canvas, data, channel) {
+            if (!canvas) return;
+            
             const ctx = canvas.getContext('2d');
             const width = canvas.width;
             const height = canvas.height;
 
-            // Extract the specific channel
             let channelData;
             if (data[0] && data[0][0] && data[0][0][0]) {
-                // Format: [batch, channels, height, width]
                 channelData = data[0][channel];
             } else if (data[channel]) {
-                // Format: [channels, height, width]
                 channelData = data[channel];
             } else {
-                // Single channel input
                 channelData = data;
             }
 
             if (!channelData) return;
 
-            // Find min/max for normalization
             let min = Infinity, max = -Infinity;
             for (let i = 0; i < channelData.length; i++) {
                 for (let j = 0; j < channelData[i].length; j++) {
@@ -420,7 +594,6 @@
                 }
             }
 
-            // Create image data
             const imageData = ctx.createImageData(width, height);
             for (let i = 0; i < height; i++) {
                 for (let j = 0; j < width; j++) {
@@ -429,17 +602,26 @@
                     const pixel = Math.floor(normalized * 255);
                     
                     const idx = (i * width + j) * 4;
-                    imageData.data[idx] = pixel;     // R
-                    imageData.data[idx + 1] = pixel; // G
-                    imageData.data[idx + 2] = pixel; // B
-                    imageData.data[idx + 3] = 255;   // A
+                    imageData.data[idx] = pixel;
+                    imageData.data[idx + 1] = pixel;
+                    imageData.data[idx + 2] = pixel;
+                    imageData.data[idx + 3] = 255;
                 }
             }
 
             ctx.putImageData(imageData, 0, 0);
         }
 
-        // Load data on page load
+        function adjustZoom(factor) {
+            if (factor === 'reset') {
+                zoomLevel = 1;
+            } else {
+                zoomLevel *= factor;
+                zoomLevel = Math.max(0.5, Math.min(2, zoomLevel));
+            }
+            visualizeSample(currentSample);
+        }
+
         loadData();
     </script>
 </body>
