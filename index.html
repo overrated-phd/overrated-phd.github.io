@@ -131,12 +131,12 @@
 
         .network-flow {
             display: flex;
-            gap: 30px;
+            gap: 60px;
             align-items: center;
             justify-content: flex-start;
             min-width: max-content;
             position: relative;
-            padding: 20px;
+            padding: 40px;
         }
 
         .layer-column {
@@ -144,6 +144,8 @@
             flex-direction: column;
             align-items: center;
             gap: 10px;
+            min-height: 400px;
+            justify-content: center;
         }
 
         .layer-title {
@@ -171,17 +173,17 @@
 
         .feature-map-item {
             background: white;
-            border: 1px solid #ddd;
+            border: 2px solid #ddd;
             border-radius: 4px;
-            padding: 5px;
+            padding: 8px;
             position: relative;
         }
 
         .feature-map-item canvas {
             display: block;
             image-rendering: pixelated;
-            width: 100%;
-            height: auto;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
         }
 
         .feature-map-item:hover {
@@ -197,10 +199,12 @@
         }
 
         .arrow {
-            font-size: 50px;
-            color: #ccc;
+            font-size: 60px;
+            color: #aaa;
             user-select: none;
             flex-shrink: 0;
+            line-height: 1;
+            margin: 0 10px;
         }
 
         .output-box {
@@ -698,7 +702,10 @@
         }
 
         function renderCanvas(canvas, data, channel) {
-            if (!canvas) return;
+            if (!canvas) {
+                console.error('Canvas not found');
+                return;
+            }
             
             const ctx = canvas.getContext('2d');
             const width = canvas.width;
@@ -706,31 +713,45 @@
 
             let channelData;
             if (data[0] && data[0][0] && data[0][0][0]) {
+                // Format: [batch, channels, height, width]
                 channelData = data[0][channel];
             } else if (data[channel]) {
+                // Format: [channels, height, width]
                 channelData = data[channel];
             } else {
+                // Single channel input
                 channelData = data;
             }
 
-            if (!channelData) return;
+            if (!channelData || !channelData[0]) {
+                console.error('Invalid channel data for channel', channel);
+                return;
+            }
 
+            const dataHeight = channelData.length;
+            const dataWidth = channelData[0].length;
+
+            // Find min/max for normalization
             let min = Infinity, max = -Infinity;
-            for (let i = 0; i < channelData.length; i++) {
-                for (let j = 0; j < channelData[i].length; j++) {
-                    min = Math.min(min, channelData[i][j]);
-                    max = Math.max(max, channelData[i][j]);
+            for (let i = 0; i < dataHeight; i++) {
+                for (let j = 0; j < dataWidth; j++) {
+                    const val = channelData[i][j];
+                    if (isFinite(val)) {
+                        min = Math.min(min, val);
+                        max = Math.max(max, val);
+                    }
                 }
             }
 
-            const imageData = ctx.createImageData(width, height);
-            for (let i = 0; i < height; i++) {
-                for (let j = 0; j < width; j++) {
+            // Create image data
+            const imageData = ctx.createImageData(dataWidth, dataHeight);
+            for (let i = 0; i < dataHeight; i++) {
+                for (let j = 0; j < dataWidth; j++) {
                     const value = channelData[i][j];
                     const normalized = (value - min) / (max - min + 1e-8);
                     const pixel = Math.floor(normalized * 255);
                     
-                    const idx = (i * width + j) * 4;
+                    const idx = (i * dataWidth + j) * 4;
                     imageData.data[idx] = pixel;
                     imageData.data[idx + 1] = pixel;
                     imageData.data[idx + 2] = pixel;
@@ -738,7 +759,15 @@
                 }
             }
 
-            ctx.putImageData(imageData, 0, 0);
+            // Scale to canvas size
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = dataWidth;
+            tempCanvas.height = dataHeight;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.putImageData(imageData, 0, 0);
+            
+            ctx.imageSmoothingEnabled = false;
+            ctx.drawImage(tempCanvas, 0, 0, width, height);
         }
 
         function adjustZoom(factor) {
