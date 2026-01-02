@@ -4,12 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CNN Explainer - TinyCNN</title>
+
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
@@ -26,116 +23,34 @@
             align-items: flex-start;
         }
 
-        .header-left {
-            display: flex;
-            gap: 30px;
-            align-items: flex-start;
-            max-width: 70%;
-        }
-
-        .title {
-            font-size: 32px;
-            font-weight: bold;
-            line-height: 1.3;
-            min-width: 280px;
-        }
-
-        .description {
-            font-size: 14px;
-            color: #d0d0d0;
-            font-weight: normal;
-            line-height: 1.5;
-            padding-top: 2px;
-        }
-
-        .description strong {
-            color: white;
-        }
-
-        .header-right {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-        }
-
-        .icon-button {
-            background: transparent;
-            border: none;
-            color: white;
-            cursor: pointer;
-            padding: 8px;
-            border-radius: 4px;
-            transition: background 0.2s;
-        }
-
-        .icon-button:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .icon-button svg {
-            width: 27.6px;
-            height: 27.6px;
-            display: block;
-        }
+        .header-left { display: flex; gap: 30px; max-width: 70%; }
+        .title { font-size: 32px; font-weight: bold; min-width: 280px; }
+        .description { font-size: 14px; color: #d0d0d0; line-height: 1.5; }
+        .description strong { color: white; }
 
         .image-selector {
             background: white;
             padding: 20px;
             display: flex;
             gap: 15px;
-            align-items: center;
             border-bottom: 2px solid #e0e0e0;
             overflow-x: auto;
         }
 
-        .sample-image {
-            cursor: pointer;
-            border: 3px solid transparent;
-            border-radius: 4px;
-            transition: all 0.2s;
-            position: relative;
-        }
+        .sample-image { position: relative; border: 3px solid transparent; border-radius: 4px; cursor: pointer; }
+        .sample-image.active { border-color: #007bff; }
+        .sample-image canvas { width: 64px; height: 64px; image-rendering: pixelated; }
+        .sample-label { font-size: 11px; color: #666; position: absolute; bottom: -18px; width: 100%; text-align: center; }
 
-        .sample-image canvas {
-            display: block;
-            width: 64px;
-            height: 64px;
-            image-rendering: pixelated;
-        }
+        .controls { background: white; padding: 15px 20px; border-bottom: 1px solid #ddd; display: flex; gap: 10px; }
 
-        .sample-image:hover {
-            transform: scale(1.1);
-        }
-
-        .sample-image.active {
-            border-color: #007bff;
-            box-shadow: 0 4px 12px rgba(0,123,255,0.3);
-        }
-
-        .sample-label {
-            position: absolute;
-            bottom: -20px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 11px;
-            color: #666;
-            white-space: nowrap;
-        }
-
-        .visualization-container {
-            padding: 40px 20px;
-            min-width: 100%;
-            overflow-x: auto;
-        }
+        .visualization-container { padding: 40px 20px; overflow-x: auto; }
 
         .network-flow {
             display: flex;
             gap: 40px;
-            align-items: stretch; /* stretch all children to same height */
+            align-items: stretch;
             justify-content: center;
-            min-width: max-content;
-            position: relative;
-            padding: 20px;
             transform-origin: top left;
         }
 
@@ -147,20 +62,8 @@
             min-width: 220px;
         }
 
-        .layer-title {
-            font-size: 14px;
-            font-weight: bold;
-            color: #333;
-            text-align: center;
-            margin-bottom: 5px;
-        }
-
-        .layer-subtitle {
-            font-size: 11px;
-            color: #666;
-            text-align: center;
-            margin-bottom: 10px;
-        }
+        .layer-title { font-size: 14px; font-weight: bold; }
+        .layer-subtitle { font-size: 11px; color: #666; }
 
         .feature-maps-grid {
             display: flex;
@@ -173,255 +76,274 @@
         .feature-map-item {
             background: white;
             border: 1px solid #ddd;
-            border-radius: 4px;
             padding: 5px;
-            position: relative;
+            border-radius: 4px;
         }
 
+        /* Enlarged feature maps */
         .feature-map-item canvas {
-            display: block;
-            image-rendering: pixelated;
             width: 70px;
             height: 70px;
+            image-rendering: pixelated;
         }
 
-        .feature-map-item:hover {
-            border-color: #007bff;
-            box-shadow: 0 2px 8px rgba(0,123,255,0.2);
-        }
+        .channel-label { font-size: 9px; color: #777; text-align: center; }
 
-        .channel-label {
-            font-size: 9px;
-            color: #999;
-            text-align: center;
-            margin-top: 3px;
-        }
-
+        /* >>> ARROW FIX HERE <<< */
         .arrow {
             font-size: 40px;
-            color: #ccc;
-            user-select: none;
+            color: #bbb;
             display: flex;
             align-items: center;
             justify-content: center;
-            align-self: stretch; /* take full height so arrow centers nicely */
+            align-self: stretch;
         }
 
         .output-box {
             background: white;
-            padding: 25px;
-            border-radius: 8px;
-            text-align: center;
             border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
             min-width: 180px;
         }
 
-        .output-label {
-            font-size: 12px;
-            color: #666;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
+        .output-digit { font-size: 64px; color: #007bff; }
 
-        .output-digit {
-            font-size: 72px;
-            font-weight: bold;
-            color: #007bff;
-            line-height: 1;
-            margin: 10px 0;
-        }
+        .prob-list { margin-top: 10px; text-align: left; font-size: 11px; }
+        .prob-item { display: flex; justify-content: space-between; color: #0056b3; }
+        .prob-max { color: #d32f2f; font-weight: bold; }
 
-        .output-confidence {
-            font-size: 11px;
-            color: #999;
-            margin-top: 10px;
-        }
-
-        .true-label {
-            font-size: 11px;
-            color: #666;
-            margin-top: 8px;
-            padding-top: 8px;
-            border-top: 1px solid #eee;
-        }
-
-        .output-probabilities {
-            margin-top: 15px;
-            text-align: left;
-            font-size: 11px;
-        }
-
-        .output-prob-title {
-            font-weight: 600;
-            color: #555;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .prob-list {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-            margin-top: 5px;
-        }
-
-        .prob-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 2px 4px;
-            border-radius: 3px;
-            color: #0056b3;
-            font-variant-numeric: tabular-nums;
-        }
-
-        .prob-item .prob-class {
-            font-weight: 500;
-        }
-
-        .prob-item.prob-max {
-            color: #d32f2f;
-            font-weight: 700;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 60px;
-            color: #666;
-            font-size: 18px;
-        }
-
-        .error {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 30px;
-            border-radius: 8px;
-            margin: 40px;
-            max-width: 800px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        .controls {
-            background: white;
-            padding: 15px 20px;
-            display: flex;
-            gap: 20px;
-            align-items: center;
-            border-bottom: 1px solid #e0e0e0;
-        }
-
-        .control-label {
-            font-size: 13px;
-            color: #666;
-            font-weight: 600;
-        }
-
-        .zoom-controls button {
-            padding: 5px 12px;
-            margin: 0 3px;
-            background: #f0f0f0;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-        }
-
-        .zoom-controls button:hover {
-            background: #e0e0e0;
-        }
+        .loading { padding: 60px; text-align: center; }
     </style>
 </head>
+
 <body>
-    <header class="header">
-        <div class="header-left">
-            <h1 class="title">Convolutional Neural Network Explanation</h1>
-            <div class="description">
-                This website presents an overview and explanation of Convolutional Neural Networks (CNNs), 
-                prepared by <strong>Maju Sumanto</strong> to fulfill the requirements of the Neural Computation course. 
-                Supervised by <strong>Professor Yuki Todo</strong>. The goal of this work is to help students and readers <strong>better understand the 
-                intuition, structure, and applications of CNNs.</strong>
+
+<header class="header">
+    <div class="header-left">
+        <h1 class="title">Convolutional Neural Network Explanation</h1>
+        <div class="description">
+            Prepared by <strong>Maju Sumanto</strong> for Neural Computation — supervised by <strong>Professor Yuki Todo</strong>.
+        </div>
+    </div>
+</header>
+
+<div class="image-selector" id="imageSelector"></div>
+
+<div class="controls">
+    <button onclick="adjustZoom(0.9)">Zoom Out</button>
+    <button onclick="adjustZoom(1.1)">Zoom In</button>
+    <button onclick="adjustZoom('reset')">Reset</button>
+</div>
+
+<div id="content">
+    <div class="loading">Loading model and sample data…</div>
+</div>
+
+<script>
+let sampleData = null;
+let currentSample = 0;
+let zoomLevel = 1;
+
+async function loadData() {
+    const res = await fetch('sample_data.json');
+    sampleData = await res.json();
+    buildSelector();
+    visualizeSample(0);
+}
+
+function buildSelector() {
+    const selector = document.getElementById('imageSelector');
+    selector.innerHTML = "";
+
+    sampleData.forEach((s, i) => {
+        const div = document.createElement("div");
+        div.className = "sample-image" + (i===0?" active":"");
+        div.onclick = ()=>selectSample(i);
+
+        const c = document.createElement("canvas");
+        c.width = 28; c.height = 28;
+        renderCanvas(c,s.input,0);
+        div.appendChild(c);
+
+        const l=document.createElement("div");
+        l.className="sample-label";
+        l.textContent="Label: "+s.label;
+        div.appendChild(l);
+
+        selector.appendChild(div);
+    });
+}
+
+function selectSample(i){
+    currentSample=i;
+    document.querySelectorAll('.sample-image').forEach((e,idx)=>e.classList.toggle('active',idx===i));
+    visualizeSample(i);
+}
+
+function visualizeSample(i){
+    const s=sampleData[i];
+    const logits=s.activations.output[0];
+    const probs=softmax(logits);
+    const maxIdx=probs.indexOf(Math.max(...probs));
+
+    const conv1=getShape(s.activations.conv1);
+    const pool1=getShape(s.activations.pool1);
+    const conv2=getShape(s.activations.conv2);
+    const pool2=getShape(s.activations.pool2);
+
+    const probHtml=probs.map((p,idx)=>`
+        <div class="prob-item ${idx===maxIdx?'prob-max':''}">
+            <span>Class ${idx}</span>
+            <span>${(p*100).toFixed(2)}%</span>
+        </div>
+    `).join('');
+
+    document.getElementById('content').innerHTML=`
+        <div class="visualization-container">
+            <div class="network-flow" style="transform:scale(${zoomLevel})">
+
+                <div class="layer-column">
+                    <div class="layer-title">Input</div>
+                    <div class="layer-subtitle">(28,28,1)</div>
+                    <div class="feature-maps-grid">
+                        <div class="feature-map-item">
+                            <canvas id="input" width="28" height="28"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="arrow">→</div>
+
+                <div class="layer-column">
+                    <div class="layer-title">Conv 1</div>
+                    <div class="layer-subtitle">${conv1[0]} channels</div>
+                    <div class="feature-maps-grid">
+                        ${[...Array(conv1[0]).keys()].map(c=>`
+                            <div class="feature-map-item">
+                                <canvas id="conv1_${c}" width="28" height="28"></canvas>
+                                <div class="channel-label">ch ${c}</div>
+                            </div>`).join('')}
+                    </div>
+                </div>
+
+                <div class="arrow">→</div>
+
+                <div class="layer-column">
+                    <div class="layer-title">Pool 1</div>
+                    <div class="layer-subtitle">${pool1[0]} channels</div>
+                    <div class="feature-maps-grid">
+                        ${[...Array(pool1[0]).keys()].map(c=>`
+                            <div class="feature-map-item">
+                                <canvas id="pool1_${c}" width="14" height="14"></canvas>
+                                <div class="channel-label">ch ${c}</div>
+                            </div>`).join('')}
+                    </div>
+                </div>
+
+                <div class="arrow">→</div>
+
+                <div class="layer-column">
+                    <div class="layer-title">Conv 2</div>
+                    <div class="layer-subtitle">${conv2[0]} channels</div>
+                    <div class="feature-maps-grid">
+                        ${[...Array(conv2[0]).keys()].map(c=>`
+                            <div class="feature-map-item">
+                                <canvas id="conv2_${c}" width="14" height="14"></canvas>
+                                <div class="channel-label">ch ${c}</div>
+                            </div>`).join('')}
+                    </div>
+                </div>
+
+                <div class="arrow">→</div>
+
+                <div class="layer-column">
+                    <div class="layer-title">Pool 2</div>
+                    <div class="layer-subtitle">${pool2[0]} channels</div>
+                    <div class="feature-maps-grid">
+                        ${[...Array(pool2[0]).keys()].map(c=>`
+                            <div class="feature-map-item">
+                                <canvas id="pool2_${c}" width="7" height="7"></canvas>
+                                <div class="channel-label">ch ${c}</div>
+                            </div>`).join('')}
+                    </div>
+                </div>
+
+                <div class="arrow">→</div>
+
+                <div class="layer-column">
+                    <div class="layer-title">Output</div>
+                    <div class="output-box">
+                        <div class="output-digit">${maxIdx}</div>
+                        <div class="prob-list">${probHtml}</div>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="header-right">
-            <button class="icon-button" title="Article">
-                <svg fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/>
-                </svg>
-            </button>
-            <button class="icon-button" title="Video">
-                <svg fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>
-                </svg>
-            </button>
-            <button class="icon-button" title="GitHub">
-                <svg fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.17 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.167 22 16.418 22 12c0-5.523-4.477-10-10-10z"/>
-                </svg>
-            </button>
-        </div>
-    </header>
+    `;
 
-    <div class="image-selector" id="imageSelector">
-        <!-- Sample images will be inserted here -->
-    </div>
+    renderAll(s);
+}
 
-    <div class="controls">
-        <span class="control-label">View:</span>
-        <div class="zoom-controls">
-            <button onclick="adjustZoom(0.9)">Zoom Out</button>
-            <button onclick="adjustZoom(1.1)">Zoom In</button>
-            <button onclick="adjustZoom('reset')">Reset</button>
-        </div>
-    </div>
+function renderAll(s){
+    renderCanvas(document.getElementById('input'),s.input,0);
 
-    <div id="content">
-        <div class="loading">Loading model and sample data...</div>
-    </div>
+    const conv1=getShape(s.activations.conv1);
+    for(let c=0;c<conv1[0];c++)
+        renderCanvas(document.getElementById(`conv1_${c}`),s.activations.elu1,c);
 
-    <script>
-        let sampleData = null;
-        let currentSample = 0;
-        let zoomLevel = 1;
+    const pool1=getShape(s.activations.pool1);
+    for(let c=0;c<pool1[0];c++)
+        renderCanvas(document.getElementById(`pool1_${c}`),s.activations.pool1,c);
 
-        async function loadData() {
-            try {
-                const samplesRes = await fetch('sample_data.json');
-                if (!samplesRes.ok) {
-                    throw new Error('Failed to load sample_data.json');
-                }
-                sampleData = await samplesRes.json();
-                initializeUI();
-                visualizeSample(0);
-            } catch (error) {
-                document.getElementById('content').innerHTML = `
-                    <div class="error">
-                        <strong>Error loading data:</strong> ${error.message}
-                        <br><br>
-                        Please ensure <strong>sample_data.json</strong> is in the same directory.
-                    </div>
-                `;
-            }
-        }
+    const conv2=getShape(s.activations.conv2);
+    for(let c=0;c<conv2[0];c++)
+        renderCanvas(document.getElementById(`conv2_${c}`),s.activations.elu2,c);
 
-        function initializeUI() {
-            const selector = document.getElementById('imageSelector');
-            selector.innerHTML = '';
+    const pool2=getShape(s.activations.pool2);
+    for(let c=0;c<pool2[0];c++)
+        renderCanvas(document.getElementById(`pool2_${c}`),s.activations.pool2,c);
+}
 
-            sampleData.forEach((sample, idx) => {
-                const div = document.createElement('div');
-                div.className = 'sample-image' + (idx === 0 ? ' active' : '');
-                div.onclick = () => selectSample(idx);
+function getShape(arr){
+    return [arr.length, arr[0].length, arr[0][0].length];
+}
 
-                const canvas = document.createElement('canvas');
-                canvas.width = 28;
-                canvas.height = 28;
-                div.appendChild(canvas);
+function renderCanvas(canvas,data,channel){
+    if(!canvas) return;
+    const ctx=canvas.getContext('2d');
+    const h=data[0].length, w=data[0][0].length;
+    const img=ctx.createImageData(w,h);
 
-                const label = document.createElement('div');
-                label.className = 'sample-label';
-                label.textContent = `Label: ${sample.label}`;
-                div.appendChild(label);
+    let arr=data[channel]||data[0][channel]||data;
 
-                renderCanvas(canvas, sample.input, 0);
-                selector.appendChild(div);
+    let min=Infinity,max=-Infinity;
+    arr.forEach(r=>r.forEach(v=>{min=Math.min(min,v);max=Math.max(max,v);}));
+
+    for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+        const v=(arr[y][x]-min)/(max-min+1e-8)*255;
+        const i=(y*w+x)*4;
+        img.data[i]=img.data[i+1]=img.data[i+2]=v;
+        img.data[i+3]=255;
+    }
+    ctx.putImageData(img,0,0);
+}
+
+function softmax(x){
+    const m=Math.max(...x);
+    const e=x.map(v=>Math.exp(v-m));
+    const s=e.reduce((a,b)=>a+b);
+    return e.map(v=>v/s);
+}
+
+function adjustZoom(k){
+    zoomLevel = k==='reset'?1:Math.max(.5,Math.min(2,zoomLevel*k));
+    visualizeSample(currentSample);
+}
+
+loadData();
+</script>
+
+</body>
+</html>
