@@ -394,19 +394,72 @@
 
         async function loadData() {
             try {
-                const samplesRes = await fetch('sample_data.json');
+                // Add a small delay to ensure file is ready
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                const samplesRes = await fetch('sample_data.json?t=' + Date.now());
                 if (!samplesRes.ok) {
-                    throw new Error('Failed to load sample_data.json');
+                    throw new Error('Failed to load sample_data.json - HTTP ' + samplesRes.status);
                 }
-                sampleData = await samplesRes.json();
+                
+                const text = await samplesRes.text();
+                if (!text || text.trim() === '') {
+                    throw new Error('sample_data.json is empty');
+                }
+                
+                sampleData = JSON.parse(text);
+                
+                // Debug: Check data structure
+                console.log('Loaded data:', sampleData);
+                console.log('First sample:', sampleData[0]);
+                
+                if (!sampleData || sampleData.length === 0) {
+                    throw new Error('sample_data.json is empty or invalid');
+                }
+                
+                if (!sampleData[0].activations) {
+                    throw new Error('Missing activations in sample data');
+                }
+                
                 initializeUI();
                 visualizeSample(0);
             } catch (error) {
+                console.error('Full error:', error);
+                
+                // Retry once after a delay
+                if (!window.loadRetried) {
+                    window.loadRetried = true;
+                    console.log('Retrying in 500ms...');
+                    setTimeout(() => loadData(), 500);
+                    return;
+                }
+                
                 document.getElementById('content').innerHTML = `
                     <div class="error">
                         <strong>Error loading data:</strong> ${error.message}
                         <br><br>
                         Please ensure <strong>sample_data.json</strong> is in the same directory.
+                        <br><br>
+                        <strong>Debug info:</strong> Check the browser console (F12) for more details.
+                        <br><br>
+                        <strong>Expected structure:</strong>
+                        <pre style="text-align: left; background: #f5f5f5; padding: 10px; margin-top: 10px;">
+[
+  {
+    "input": [...],
+    "label": 5,
+    "activations": {
+      "conv1": [...],
+      "elu1": [...],
+      "pool1": [...],
+      "conv2": [...],
+      "elu2": [...],
+      "pool2": [...],
+      "output": [[...]]
+    }
+  }
+]
+                        </pre>
                     </div>
                 `;
             }
