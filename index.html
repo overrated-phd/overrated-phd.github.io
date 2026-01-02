@@ -829,6 +829,29 @@
 
             console.log('Value range:', {min, max});
 
+            // Handle case where all values are the same
+            if (min === max) {
+                console.warn('All values are the same:', min);
+                // If all zeros, make it black; otherwise make it gray
+                const fillValue = min === 0 ? 0 : 128;
+                const imageData = ctx.createImageData(imgWidth, imgHeight);
+                for (let i = 0; i < imgHeight * imgWidth; i++) {
+                    const idx = i * 4;
+                    imageData.data[idx] = fillValue;
+                    imageData.data[idx + 1] = fillValue;
+                    imageData.data[idx + 2] = fillValue;
+                    imageData.data[idx + 3] = 255;
+                }
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = imgWidth;
+                tempCanvas.height = imgHeight;
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCtx.putImageData(imageData, 0, 0);
+                ctx.imageSmoothingEnabled = false;
+                ctx.drawImage(tempCanvas, 0, 0, width, height);
+                return;
+            }
+
             // Create image data with explicit integer dimensions
             const imgWidth = Math.floor(dataWidth);
             const imgHeight = Math.floor(dataHeight);
