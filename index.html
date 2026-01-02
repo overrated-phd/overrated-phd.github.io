@@ -131,12 +131,12 @@
         .network-flow {
             display: flex;
             gap: 40px;
-            align-items: flex-start; /* top-align columns for cleaner flow */
+            align-items: stretch; /* stretch all children to same height */
             justify-content: center;
             min-width: max-content;
             position: relative;
             padding: 20px;
-            transform-origin: top left; /* stable zoom origin */
+            transform-origin: top left;
         }
 
         .layer-column {
@@ -144,7 +144,7 @@
             flex-direction: column;
             align-items: center;
             gap: 10px;
-            min-width: 220px; /* make columns more consistent width */
+            min-width: 220px;
         }
 
         .layer-title {
@@ -166,7 +166,7 @@
             display: flex;
             flex-wrap: wrap;
             gap: 12px;
-            max-width: 320px; /* give space for enlarged maps */
+            max-width: 320px;
             justify-content: center;
         }
 
@@ -178,11 +178,10 @@
             position: relative;
         }
 
-        /* Enlarged feature maps (~250% or more) */
         .feature-map-item canvas {
             display: block;
             image-rendering: pixelated;
-            width: 70px;  /* larger visual size */
+            width: 70px;
             height: 70px;
         }
 
@@ -202,7 +201,10 @@
             font-size: 40px;
             color: #ccc;
             user-select: none;
-            align-self: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            align-self: stretch; /* take full height so arrow centers nicely */
         }
 
         .output-box {
@@ -244,7 +246,6 @@
             border-top: 1px solid #eee;
         }
 
-        /* Probability list styles */
         .output-probabilities {
             margin-top: 15px;
             text-align: left;
@@ -270,7 +271,7 @@
             justify-content: space-between;
             padding: 2px 4px;
             border-radius: 3px;
-            color: #0056b3; /* blue for non-max */
+            color: #0056b3;
             font-variant-numeric: tabular-nums;
         }
 
@@ -279,7 +280,7 @@
         }
 
         .prob-item.prob-max {
-            color: #d32f2f; /* red for highest prob class */
+            color: #d32f2f;
             font-weight: 700;
         }
 
@@ -424,278 +425,3 @@
 
                 renderCanvas(canvas, sample.input, 0);
                 selector.appendChild(div);
-            });
-        }
-
-        function selectSample(idx) {
-            currentSample = idx;
-            document.querySelectorAll('.sample-image').forEach((el, i) => {
-                el.classList.toggle('active', i === idx);
-            });
-            visualizeSample(idx);
-        }
-
-        function visualizeSample(idx) {
-            const sample = sampleData[idx];
-            const content = document.getElementById('content');
-
-            const conv1Shape = getShape(sample.activations.conv1);
-            const pool1Shape = getShape(sample.activations.pool1);
-            const conv2Shape = getShape(sample.activations.conv2);
-            const pool2Shape = getShape(sample.activations.pool2);
-
-            // Get prediction and probabilities
-            const logits = sample.activations.output[0];
-            const predictedClass = logits.indexOf(Math.max(...logits));
-            const confidence = Math.max(...logits);
-            const probabilities = softmax(logits);
-
-            let html = `
-                <div class="visualization-container">
-                    <div class="network-flow" style="transform: scale(${zoomLevel})">
-                        
-                        <!-- Input -->
-                        <div class="layer-column">
-                            <div class="layer-title">Input</div>
-                            <div class="layer-subtitle">(28, 28, 1)</div>
-                            <div class="feature-maps-grid">
-                                <div class="feature-map-item">
-                                    <canvas id="input" width="28" height="28"></canvas>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="arrow">→</div>
-
-                        <!-- Conv1 -->
-                        <div class="layer-column">
-                            <div class="layer-title">Conv 1</div>
-                            <div class="layer-subtitle">(28, 28, ${conv1Shape[0]})</div>
-                            <div class="feature-maps-grid">
-            `;
-
-            for (let c = 0; c < conv1Shape[0]; c++) {
-                html += `
-                    <div class="feature-map-item">
-                        <canvas id="conv1_${c}" width="28" height="28"></canvas>
-                        <div class="channel-label">ch ${c}</div>
-                    </div>
-                `;
-            }
-
-            html += `
-                            </div>
-                        </div>
-
-                        <div class="arrow">→</div>
-
-                        <!-- ReLU + Pool1 -->
-                        <div class="layer-column">
-                            <div class="layer-title">ReLU + Pool</div>
-                            <div class="layer-subtitle">(14, 14, ${pool1Shape[0]})</div>
-                            <div class="feature-maps-grid">
-            `;
-
-            for (let c = 0; c < pool1Shape[0]; c++) {
-                html += `
-                    <div class="feature-map-item">
-                        <canvas id="pool1_${c}" width="14" height="14"></canvas>
-                        <div class="channel-label">ch ${c}</div>
-                    </div>
-                `;
-            }
-
-            html += `
-                            </div>
-                        </div>
-
-                        <div class="arrow">→</div>
-
-                        <!-- Conv2 -->
-                        <div class="layer-column">
-                            <div class="layer-title">Conv 2</div>
-                            <div class="layer-subtitle">(14, 14, ${conv2Shape[0]})</div>
-                            <div class="feature-maps-grid">
-            `;
-
-            for (let c = 0; c < conv2Shape[0]; c++) {
-                html += `
-                    <div class="feature-map-item">
-                        <canvas id="conv2_${c}" width="14" height="14"></canvas>
-                        <div class="channel-label">ch ${c}</div>
-                    </div>
-                `;
-            }
-
-            html += `
-                            </div>
-                        </div>
-
-                        <div class="arrow">→</div>
-
-                        <!-- ReLU + Pool2 -->
-                        <div class="layer-column">
-                            <div class="layer-title">ReLU + Pool</div>
-                            <div class="layer-subtitle">(7, 7, ${pool2Shape[0]})</div>
-                            <div class="feature-maps-grid">
-            `;
-
-            for (let c = 0; c < pool2Shape[0]; c++) {
-                html += `
-                    <div class="feature-map-item">
-                        <canvas id="pool2_${c}" width="7" height="7"></canvas>
-                        <div class="channel-label">ch ${c}</div>
-                    </div>
-                `;
-            }
-
-            // Probability list
-            const probItems = probabilities.map((p, classIdx) => {
-                const isMax = classIdx === predictedClass;
-                const className = isMax ? 'prob-item prob-max' : 'prob-item';
-                return `
-                    <div class="${className}">
-                        <span class="prob-class">Class ${classIdx}</span>
-                        <span class="prob-value">${(p * 100).toFixed(2)}%</span>
-                    </div>
-                `;
-            }).join('');
-
-            html += `
-                            </div>
-                        </div>
-
-                        <div class="arrow">→</div>
-
-                        <!-- Output -->
-                        <div class="layer-column">
-                            <div class="layer-title">Output</div>
-                            <div class="layer-subtitle">(10)</div>
-                            <div class="output-box">
-                                <div class="output-label">Prediction</div>
-                                <div class="output-digit">${predictedClass}</div>
-                                <div class="output-confidence">Logit (max): ${confidence.toFixed(4)}</div>
-                                <div class="true-label">True Label: ${sample.label}</div>
-
-                                <div class="output-probabilities">
-                                    <div class="output-prob-title">Class Probabilities</div>
-                                    <div class="prob-list">
-                                        ${probItems}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-            `;
-
-            content.innerHTML = html;
-            renderAllActivations(sample);
-        }
-
-        function renderAllActivations(sample) {
-            // Input
-            renderCanvas(document.getElementById('input'), sample.input, 0);
-
-            // Conv1
-            const conv1Shape = getShape(sample.activations.conv1);
-            for (let c = 0; c < conv1Shape[0]; c++) {
-                renderCanvas(document.getElementById(`conv1_${c}`), sample.activations.elu1, c);
-            }
-
-            // Pool1
-            const pool1Shape = getShape(sample.activations.pool1);
-            for (let c = 0; c < pool1Shape[0]; c++) {
-                renderCanvas(document.getElementById(`pool1_${c}`), sample.activations.pool1, c);
-            }
-
-            // Conv2
-            const conv2Shape = getShape(sample.activations.conv2);
-            for (let c = 0; c < conv2Shape[0]; c++) {
-                renderCanvas(document.getElementById(`conv2_${c}`), sample.activations.elu2, c);
-            }
-
-            // Pool2
-            const pool2Shape = getShape(sample.activations.pool2);
-            for (let c = 0; c < pool2Shape[0]; c++) {
-                renderCanvas(document.getElementById(`pool2_${c}`), sample.activations.pool2, c);
-            }
-        }
-
-        function getShape(arr) {
-            if (arr[0] && arr[0][0] && arr[0][0][0]) {
-                return [arr[0].length, arr[0][0].length, arr[0][0][0].length];
-            }
-            if (arr[0] && arr[0][0]) {
-                return [arr.length, arr[0].length, arr[0][0].length];
-            }
-            return [1, 28, 28];
-        }
-
-        function renderCanvas(canvas, data, channel) {
-            if (!canvas) return;
-            
-            const ctx = canvas.getContext('2d');
-            const width = canvas.width;
-            const height = canvas.height;
-
-            let channelData;
-            if (data[0] && data[0][0] && data[0][0][0]) {
-                channelData = data[0][channel];
-            } else if (data[channel]) {
-                channelData = data[channel];
-            } else {
-                channelData = data;
-            }
-
-            if (!channelData) return;
-
-            let min = Infinity, max = -Infinity;
-            for (let i = 0; i < channelData.length; i++) {
-                for (let j = 0; j < channelData[i].length; j++) {
-                    min = Math.min(min, channelData[i][j]);
-                    max = Math.max(max, channelData[i][j]);
-                }
-            }
-
-            const imageData = ctx.createImageData(width, height);
-            for (let i = 0; i < height; i++) {
-                for (let j = 0; j < width; j++) {
-                    const value = channelData[i][j];
-                    const normalized = (value - min) / (max - min + 1e-8);
-                    const pixel = Math.floor(normalized * 255);
-                    
-                    const idx = (i * width + j) * 4;
-                    imageData.data[idx] = pixel;
-                    imageData.data[idx + 1] = pixel;
-                    imageData.data[idx + 2] = pixel;
-                    imageData.data[idx + 3] = 255;
-                }
-            }
-
-            ctx.putImageData(imageData, 0, 0);
-        }
-
-        // Softmax helper to convert logits to probabilities
-        function softmax(logits) {
-            const maxLogit = Math.max(...logits);
-            const exps = logits.map(v => Math.exp(v - maxLogit));
-            const sumExps = exps.reduce((a, b) => a + b, 0);
-            return exps.map(v => v / sumExps);
-        }
-
-        function adjustZoom(factor) {
-            if (factor === 'reset') {
-                zoomLevel = 1;
-            } else {
-                zoomLevel *= factor;
-                zoomLevel = Math.max(0.5, Math.min(2, zoomLevel));
-            }
-            visualizeSample(currentSample);
-        }
-
-        loadData();
-    </script>
-</body>
-</html>
