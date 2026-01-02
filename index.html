@@ -131,11 +131,12 @@
         .network-flow {
             display: flex;
             gap: 40px;
-            align-items: center;
+            align-items: flex-start; /* top-align columns for cleaner flow */
             justify-content: center;
             min-width: max-content;
             position: relative;
             padding: 20px;
+            transform-origin: top left; /* stable zoom origin */
         }
 
         .layer-column {
@@ -143,6 +144,7 @@
             flex-direction: column;
             align-items: center;
             gap: 10px;
+            min-width: 220px; /* make columns more consistent width */
         }
 
         .layer-title {
@@ -163,8 +165,8 @@
         .feature-maps-grid {
             display: flex;
             flex-wrap: wrap;
-            gap: 8px;
-            max-width: 200px;
+            gap: 12px;
+            max-width: 320px; /* give space for enlarged maps */
             justify-content: center;
         }
 
@@ -176,9 +178,12 @@
             position: relative;
         }
 
+        /* Enlarged feature maps (~250% or more) */
         .feature-map-item canvas {
             display: block;
             image-rendering: pixelated;
+            width: 70px;  /* larger visual size */
+            height: 70px;
         }
 
         .feature-map-item:hover {
@@ -197,6 +202,7 @@
             font-size: 40px;
             color: #ccc;
             user-select: none;
+            align-self: center;
         }
 
         .output-box {
@@ -205,7 +211,7 @@
             border-radius: 8px;
             text-align: center;
             border: 2px solid #ddd;
-            min-width: 150px;
+            min-width: 180px;
         }
 
         .output-label {
@@ -236,6 +242,45 @@
             margin-top: 8px;
             padding-top: 8px;
             border-top: 1px solid #eee;
+        }
+
+        /* Probability list styles */
+        .output-probabilities {
+            margin-top: 15px;
+            text-align: left;
+            font-size: 11px;
+        }
+
+        .output-prob-title {
+            font-weight: 600;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .prob-list {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            margin-top: 5px;
+        }
+
+        .prob-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 2px 4px;
+            border-radius: 3px;
+            color: #0056b3; /* blue for non-max */
+            font-variant-numeric: tabular-nums;
+        }
+
+        .prob-item .prob-class {
+            font-weight: 500;
+        }
+
+        .prob-item.prob-max {
+            color: #d32f2f; /* red for highest prob class */
+            font-weight: 700;
         }
 
         .loading {
@@ -399,10 +444,11 @@
             const conv2Shape = getShape(sample.activations.conv2);
             const pool2Shape = getShape(sample.activations.pool2);
 
-            // Get prediction
+            // Get prediction and probabilities
             const logits = sample.activations.output[0];
             const predictedClass = logits.indexOf(Math.max(...logits));
             const confidence = Math.max(...logits);
+            const probabilities = softmax(logits);
 
             let html = `
                 <div class="visualization-container">
@@ -443,7 +489,7 @@
 
                         <div class="arrow">→</div>
 
-                        <!-- ELU + Pool1 -->
+                        <!-- ReLU + Pool1 -->
                         <div class="layer-column">
                             <div class="layer-title">ReLU + Pool</div>
                             <div class="layer-subtitle">(14, 14, ${pool1Shape[0]})</div>
@@ -487,7 +533,7 @@
 
                         <div class="arrow">→</div>
 
-                        <!-- ELU + Pool2 -->
+                        <!-- ReLU + Pool2 -->
                         <div class="layer-column">
                             <div class="layer-title">ReLU + Pool</div>
                             <div class="layer-subtitle">(7, 7, ${pool2Shape[0]})</div>
@@ -503,6 +549,18 @@
                 `;
             }
 
+            // Probability list
+            const probItems = probabilities.map((p, classIdx) => {
+                const isMax = classIdx === predictedClass;
+                const className = isMax ? 'prob-item prob-max' : 'prob-item';
+                return `
+                    <div class="${className}">
+                        <span class="prob-class">Class ${classIdx}</span>
+                        <span class="prob-value">${(p * 100).toFixed(2)}%</span>
+                    </div>
+                `;
+            }).join('');
+
             html += `
                             </div>
                         </div>
@@ -516,8 +574,15 @@
                             <div class="output-box">
                                 <div class="output-label">Prediction</div>
                                 <div class="output-digit">${predictedClass}</div>
-                                <div class="output-confidence">Confidence: ${confidence.toFixed(4)}</div>
+                                <div class="output-confidence">Logit (max): ${confidence.toFixed(4)}</div>
                                 <div class="true-label">True Label: ${sample.label}</div>
+
+                                <div class="output-probabilities">
+                                    <div class="output-prob-title">Class Probabilities</div>
+                                    <div class="prob-list">
+                                        ${probItems}
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -610,6 +675,14 @@
             }
 
             ctx.putImageData(imageData, 0, 0);
+        }
+
+        // Softmax helper to convert logits to probabilities
+        function softmax(logits) {
+            const maxLogit = Math.max(...logits);
+            const exps = logits.map(v => Math.exp(v - maxLogit));
+            const sumExps = exps.reduce((a, b) => a + b, 0);
+            return exps.map(v => v / sumExps);
         }
 
         function adjustZoom(factor) {
