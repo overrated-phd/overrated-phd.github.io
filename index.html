@@ -17,30 +17,38 @@
         }
 
         .header {
-            background: #2b2b2b;
+            background: #3a3a3a;
             color: white;
-            padding: 20px 30px;
+            padding: 30px 40px;
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
         }
 
         .header-left {
             display: flex;
-            align-items: baseline;
-            gap: 15px;
+            gap: 30px;
+            align-items: flex-start;
+            max-width: 70%;
         }
 
         .title {
-            font-size: 28px;
+            font-size: 32px;
             font-weight: bold;
-            letter-spacing: 2px;
+            line-height: 1.3;
+            min-width: 280px;
         }
 
-        .subtitle {
+        .description {
             font-size: 14px;
             color: #d0d0d0;
             font-weight: normal;
+            line-height: 1.5;
+            padding-top: 2px;
+        }
+
+        .description strong {
+            color: white;
         }
 
         .header-right {
@@ -64,8 +72,8 @@
         }
 
         .icon-button svg {
-            width: 30px;
-            height: 30px;
+            width: 27.6px;
+            height: 27.6px;
             display: block;
         }
 
@@ -81,10 +89,12 @@
     <header class="header">
         <div class="header-left">
             <h1 class="title">Convolutional Neural Network Explanation</h1>
-            <span class="subtitle">This website presents an overview and explanation of Convolutional Neural Networks (CNNs),
-                <br>prepared by <b>Maju Sumanto</b> to fulfill the requirements of the Neural Computation course.</br>
-                Supervised by <b>Professor Yuki Todo</b>. The goal of this work is to help students and readers <b>better understand the intuition, structure, and applications of CNNs.</b>
-            </span>
+            <div class="description">
+                This website presents an overview and explanation of Convolutional Neural Networks (CNNs), 
+                prepared by <strong>Maju Sumanto</strong> to fulfill the requirements of the Neural Computation course. 
+                Supervised by <strong>Professor Yuki Todo</strong>. The goal of this work is to help students and readers <strong>better understand the 
+                intuition, structure, and applications of CNNs.</strong>
+            </div>
         </div>
         <div class="header-right">
             <button class="icon-button" title="Article" onclick="alert('Article clicked')">
