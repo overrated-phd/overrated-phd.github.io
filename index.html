@@ -515,7 +515,6 @@
 
         .hyper-visualization {
             display: flex;
-            flex-direction: column;
             gap: 30px;
             align-items: center;
             justify-content: center;
@@ -523,17 +522,17 @@
 
         .matrix-row {
             display: flex;
-            gap: 30px;
+            flex-direction: column;
+            gap: 15px;
             align-items: center;
-            justify-content: center;
         }
 
-        .vertical-arrow {
+        .horizontal-arrow {
             font-size: 40px;
             color: #aaa;
             text-align: center;
-            margin: 10px 0;
             user-select: none;
+            align-self: center;
         }
 
         .matrix-container {
@@ -576,6 +575,10 @@
 
         .matrix-cell.active-output {
             background: #6c9bd1;
+        }
+
+        .matrix-cell.contributing-output {
+            background: #b0b0b0 !important;
         }
 
         .matrix-cell.output {
@@ -952,7 +955,7 @@
                         </div>
                     </div>
                     
-                    <div class="vertical-arrow">↓</div>
+                    <div class="horizontal-arrow">→</div>
                     
                     <div class="matrix-row">
                         <div class="matrix-container">
@@ -962,7 +965,7 @@
                         </div>
                     </div>
                     
-                    <div class="vertical-arrow">↓</div>
+                    <div class="horizontal-arrow">→</div>
                     
                     <div class="matrix-row">
                         <div class="matrix-container">
@@ -1583,7 +1586,7 @@
             const inputCells = document.querySelectorAll('#inputMatrix .matrix-cell');
             const outputCells = document.querySelectorAll('#outputMatrix .matrix-cell');
             
-            // Highlight the kernel region in the input
+            // Highlight the kernel region in the input (red)
             for (let kr = 0; kr < kernel; kr++) {
                 for (let kc = 0; kc < kernel; kc++) {
                     const cellRow = startRow + kr;
@@ -1596,9 +1599,9 @@
                 }
             }
             
-            // Highlight the corresponding output cell in blue
+            // Highlight the hovered output cell in grey
             if (outputCells[outputIdx]) {
-                outputCells[outputIdx].classList.add('active-output');
+                outputCells[outputIdx].classList.add('contributing-output');
             }
         }
 
@@ -1609,17 +1612,17 @@
             const inputCells = document.querySelectorAll('#inputMatrix .matrix-cell');
             const outputCells = document.querySelectorAll('#outputMatrix .matrix-cell');
             
-            // Calculate the top-left corner of the kernel centered on this cell
+            console.log('Hovering input cell:', inputIdx, 'at position:', inputRow, inputCol);
+            
+            // Highlight the kernel region centered on this cell (in red)
             let kernelStartRow = inputRow - Math.floor(kernel / 2);
             let kernelStartCol = inputCol - Math.floor(kernel / 2);
             
-            // Highlight the kernel region
             for (let kr = 0; kr < kernel; kr++) {
                 for (let kc = 0; kc < kernel; kc++) {
                     const cellRow = kernelStartRow + kr;
                     const cellCol = kernelStartCol + kc;
                     
-                    // Check if within bounds of padded matrix
                     if (cellRow >= 0 && cellRow < paddedSize && cellCol >= 0 && cellCol < paddedSize) {
                         const cellIdx = cellRow * paddedSize + cellCol;
                         if (inputCells[cellIdx]) {
@@ -1629,18 +1632,20 @@
                 }
             }
             
-            // Find all output cells that this input cell contributes to
-            for (let outRow = 0; outRow < outputSize; outRow++) {
-                for (let outCol = 0; outCol < outputSize; outCol++) {
-                    const outKernelStartRow = outRow * stride;
-                    const outKernelStartCol = outCol * stride;
+            // Find the ONE output cell that corresponds to this kernel position
+            // The output cell is determined by where this kernel would align on the grid
+            if (kernelStartRow >= 0 && kernelStartCol >= 0) {
+                // Check if this kernel position aligns with the stride
+                if (kernelStartRow % stride === 0 && kernelStartCol % stride === 0) {
+                    const outRow = kernelStartRow / stride;
+                    const outCol = kernelStartCol / stride;
                     
-                    // Check if the input cell is within this output's kernel window
-                    if (inputRow >= outKernelStartRow && inputRow < outKernelStartRow + kernel &&
-                        inputCol >= outKernelStartCol && inputCol < outKernelStartCol + kernel) {
+                    // Make sure this output cell is within bounds
+                    if (outRow >= 0 && outRow < outputSize && outCol >= 0 && outCol < outputSize) {
                         const outIdx = outRow * outputSize + outCol;
                         if (outputCells[outIdx]) {
-                            outputCells[outIdx].classList.add('active-output');
+                            outputCells[outIdx].classList.add('contributing-output');
+                            console.log('Highlighted output cell:', outIdx, 'at position:', outRow, outCol);
                         }
                     }
                 }
@@ -1653,6 +1658,7 @@
             });
             document.querySelectorAll('#outputMatrix .matrix-cell').forEach(cell => {
                 cell.classList.remove('active-output');
+                cell.classList.remove('contributing-output');
             });
         }
 
