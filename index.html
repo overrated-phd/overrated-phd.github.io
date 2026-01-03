@@ -443,6 +443,163 @@
             color: #1a1a1a !important;
         }
 
+        /* Hyperparameter Interactive Section */
+        .hyper-interactive {
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            margin-top: 30px;
+        }
+
+        .hyper-controls {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+
+        .hyper-control {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .hyper-control label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .hyper-control .label-text {
+            flex: 1;
+        }
+
+        .hyper-control input[type="range"] {
+            width: 100%;
+            height: 4px;
+            border-radius: 2px;
+            background: #ddd;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .hyper-control input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: #dc3545;
+            cursor: pointer;
+        }
+
+        .hyper-control input[type="range"]::-moz-range-thumb {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: #dc3545;
+            cursor: pointer;
+            border: none;
+        }
+
+        .hyper-control input[type="number"] {
+            width: 50px;
+            padding: 4px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .hyper-visualization {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .matrix-row {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .matrix-container {
+            text-align: center;
+        }
+
+        .matrix-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .matrix-subtitle {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .matrix-grid {
+            display: inline-grid;
+            gap: 1px;
+            background: #333;
+            padding: 1px;
+            border: 2px solid #333;
+        }
+
+        .matrix-cell {
+            width: 40px;
+            height: 40px;
+            background: #e8e8e8;
+            border: none;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .matrix-cell.kernel {
+            background: #ffb3ba;
+        }
+
+        .matrix-cell.active-output {
+            background: #6c9bd1;
+        }
+
+        .matrix-cell.output {
+            background: #ffdfba;
+        }
+
+        .matrix-cell.padding {
+            background: #d0d0d0;
+            opacity: 0.5;
+        }
+
+        .matrix-cell:hover {
+            transform: scale(1.1);
+            z-index: 10;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .hover-hint {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #666;
+            text-align: center;
+            font-style: italic;
+        }
+
+        .hover-hint svg {
+            width: 18px;
+            height: 18px;
+            vertical-align: middle;
+            margin-right: 5px;
+        }
+
         .controls {
             background: white;
             padding: 15px 20px;
@@ -734,6 +891,81 @@
                 where \(\eta\) is the learning rate. Over time, the CNN learns kernels and
                 weights that minimize the loss and improve classification accuracy.
             </p>
+        </section>
+
+        <section class="explanation-section" id="hyperparameters">
+            <h2>Understanding Hyperparameters</h2>
+            <p>
+                Convolutional layers have several <strong>hyperparameters</strong> that control how the convolution operation works.
+                Experiment with the controls below to see how these parameters affect the input and output sizes.
+            </p>
+            
+            <div class="hyper-interactive">
+                <div class="hyper-controls">
+                    <div class="hyper-control">
+                        <label>
+                            <span class="label-text">Input Size:</span>
+                            <input type="number" id="inputSizeNum" value="5" min="3" max="10" readonly>
+                        </label>
+                        <input type="range" id="inputSize" min="3" max="10" value="5">
+                    </div>
+                    
+                    <div class="hyper-control">
+                        <label>
+                            <span class="label-text">Padding:</span>
+                            <input type="number" id="paddingNum" value="0" min="0" max="3" readonly>
+                        </label>
+                        <input type="range" id="padding" min="0" max="3" value="0">
+                    </div>
+                    
+                    <div class="hyper-control">
+                        <label>
+                            <span class="label-text">Kernel Size:</span>
+                            <input type="number" id="kernelSizeNum" value="2" min="2" max="5" readonly>
+                        </label>
+                        <input type="range" id="kernelSize" min="2" max="5" value="2">
+                    </div>
+                    
+                    <div class="hyper-control">
+                        <label>
+                            <span class="label-text">Stride:</span>
+                            <input type="number" id="strideNum" value="1" min="1" max="3" readonly>
+                        </label>
+                        <input type="range" id="stride" min="1" max="3" value="1">
+                    </div>
+                </div>
+                
+                <div class="hyper-visualization">
+                    <div class="matrix-row">
+                        <div class="matrix-container">
+                            <div class="matrix-title">Input <span id="inputDimsOrig">(5, 5)</span></div>
+                            <div class="matrix-subtitle">Before padding</div>
+                            <div class="matrix-grid" id="inputMatrixOrig"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="matrix-row">
+                        <div class="matrix-container">
+                            <div class="matrix-title">Input <span id="inputDims">(5, 5)</span></div>
+                            <div class="matrix-subtitle">After padding <span id="paddedDims">(5, 5)</span></div>
+                            <div class="matrix-grid" id="inputMatrix"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="matrix-row">
+                        <div class="matrix-container">
+                            <div class="matrix-title">Output <span id="outputDims">(4, 4)</span></div>
+                            <div class="matrix-subtitle"> </div>
+                            <div class="matrix-grid" id="outputMatrix"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="hover-hint">
+                <svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                Hover over the matrices to see kernel position and corresponding output.
+            </div>
         </section>
 
         <section class="explanation-section" id="summary">
@@ -1236,6 +1468,207 @@
             }
             visualizeSample(currentSample);
         }
+
+        // Hyperparameter interactive visualization
+        let hyperParams = {
+            inputSize: 5,
+            padding: 0,
+            kernelSize: 2,
+            stride: 1
+        };
+
+        function updateHyperparams() {
+            const input = hyperParams.inputSize;
+            const pad = hyperParams.padding;
+            const kernel = hyperParams.kernelSize;
+            const stride = hyperParams.stride;
+            
+            const paddedSize = input + 2 * pad;
+            const outputSize = Math.floor((paddedSize - kernel) / stride) + 1;
+            
+            document.getElementById('inputDimsOrig').textContent = `(${input}, ${input})`;
+            document.getElementById('inputDims').textContent = `(${input}, ${input})`;
+            document.getElementById('paddedDims').textContent = `(${paddedSize}, ${paddedSize})`;
+            document.getElementById('outputDims').textContent = `(${outputSize}, ${outputSize})`;
+            
+            renderMatrices(input, paddedSize, outputSize, kernel, stride, pad);
+        }
+
+        function renderMatrices(inputSize, paddedSize, outputSize, kernel, stride, pad) {
+            const inputMatrixOrig = document.getElementById('inputMatrixOrig');
+            const inputMatrix = document.getElementById('inputMatrix');
+            const outputMatrix = document.getElementById('outputMatrix');
+            
+            if (!inputMatrixOrig || !inputMatrix || !outputMatrix) return;
+            
+            inputMatrixOrig.innerHTML = '';
+            inputMatrix.innerHTML = '';
+            outputMatrix.innerHTML = '';
+            
+            inputMatrixOrig.style.gridTemplateColumns = `repeat(${inputSize}, 40px)`;
+            inputMatrix.style.gridTemplateColumns = `repeat(${paddedSize}, 40px)`;
+            outputMatrix.style.gridTemplateColumns = `repeat(${outputSize}, 40px)`;
+            
+            // Create original input matrix cells (before padding)
+            for (let i = 0; i < inputSize * inputSize; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'matrix-cell';
+                cell.dataset.index = i;
+                inputMatrixOrig.appendChild(cell);
+            }
+            
+            // Create padded input matrix cells
+            for (let i = 0; i < paddedSize * paddedSize; i++) {
+                const row = Math.floor(i / paddedSize);
+                const col = i % paddedSize;
+                
+                const cell = document.createElement('div');
+                cell.className = 'matrix-cell';
+                cell.dataset.index = i;
+                
+                // Mark padding cells
+                if (row < pad || row >= paddedSize - pad || col < pad || col >= paddedSize - pad) {
+                    cell.classList.add('padding');
+                }
+                
+                // Add hover for input cells
+                cell.addEventListener('mouseenter', function() {
+                    highlightFromInput(i, inputSize, paddedSize, outputSize, kernel, stride, pad);
+                });
+                
+                cell.addEventListener('mouseleave', function() {
+                    clearHighlight();
+                });
+                
+                inputMatrix.appendChild(cell);
+            }
+            
+            // Create output matrix cells
+            for (let i = 0; i < outputSize * outputSize; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'matrix-cell output';
+                cell.dataset.index = i;
+                
+                cell.addEventListener('mouseenter', function() {
+                    highlightFromOutput(i, paddedSize, outputSize, kernel, stride);
+                });
+                
+                cell.addEventListener('mouseleave', function() {
+                    clearHighlight();
+                });
+                
+                outputMatrix.appendChild(cell);
+            }
+        }
+
+        function highlightFromOutput(outputIdx, paddedSize, outputSize, kernel, stride) {
+            const row = Math.floor(outputIdx / outputSize);
+            const col = outputIdx % outputSize;
+            
+            const startRow = row * stride;
+            const startCol = col * stride;
+            
+            const inputCells = document.querySelectorAll('#inputMatrix .matrix-cell');
+            const outputCells = document.querySelectorAll('#outputMatrix .matrix-cell');
+            
+            // Highlight the kernel region in the input
+            for (let kr = 0; kr < kernel; kr++) {
+                for (let kc = 0; kc < kernel; kc++) {
+                    const cellRow = startRow + kr;
+                    const cellCol = startCol + kc;
+                    const cellIdx = cellRow * paddedSize + cellCol;
+                    
+                    if (cellIdx < inputCells.length) {
+                        inputCells[cellIdx].classList.add('kernel');
+                    }
+                }
+            }
+            
+            // Highlight the corresponding output cell in blue
+            if (outputCells[outputIdx]) {
+                outputCells[outputIdx].classList.add('active-output');
+            }
+        }
+
+        function highlightFromInput(inputIdx, inputSize, paddedSize, outputSize, kernel, stride, pad) {
+            const inputRow = Math.floor(inputIdx / paddedSize);
+            const inputCol = inputIdx % paddedSize;
+            
+            const inputCells = document.querySelectorAll('#inputMatrix .matrix-cell');
+            const outputCells = document.querySelectorAll('#outputMatrix .matrix-cell');
+            
+            // Calculate the top-left corner of the kernel centered on this cell
+            let kernelStartRow = inputRow - Math.floor(kernel / 2);
+            let kernelStartCol = inputCol - Math.floor(kernel / 2);
+            
+            // Highlight the kernel region
+            for (let kr = 0; kr < kernel; kr++) {
+                for (let kc = 0; kc < kernel; kc++) {
+                    const cellRow = kernelStartRow + kr;
+                    const cellCol = kernelStartCol + kc;
+                    
+                    // Check if within bounds of padded matrix
+                    if (cellRow >= 0 && cellRow < paddedSize && cellCol >= 0 && cellCol < paddedSize) {
+                        const cellIdx = cellRow * paddedSize + cellCol;
+                        if (inputCells[cellIdx]) {
+                            inputCells[cellIdx].classList.add('kernel');
+                        }
+                    }
+                }
+            }
+            
+            // Find all output cells that this input cell contributes to
+            for (let outRow = 0; outRow < outputSize; outRow++) {
+                for (let outCol = 0; outCol < outputSize; outCol++) {
+                    const outKernelStartRow = outRow * stride;
+                    const outKernelStartCol = outCol * stride;
+                    
+                    // Check if the input cell is within this output's kernel window
+                    if (inputRow >= outKernelStartRow && inputRow < outKernelStartRow + kernel &&
+                        inputCol >= outKernelStartCol && inputCol < outKernelStartCol + kernel) {
+                        const outIdx = outRow * outputSize + outCol;
+                        if (outputCells[outIdx]) {
+                            outputCells[outIdx].classList.add('active-output');
+                        }
+                    }
+                }
+            }
+        }
+
+        function clearHighlight() {
+            document.querySelectorAll('#inputMatrix .matrix-cell').forEach(cell => {
+                cell.classList.remove('kernel');
+            });
+            document.querySelectorAll('#outputMatrix .matrix-cell').forEach(cell => {
+                cell.classList.remove('active-output');
+            });
+        }
+
+        function initHyperparams() {
+            const controls = ['inputSize', 'padding', 'kernelSize', 'stride'];
+            
+            controls.forEach(id => {
+                const slider = document.getElementById(id);
+                const numInput = document.getElementById(id + 'Num');
+                
+                if (!slider || !numInput) return;
+                
+                slider.addEventListener('input', function() {
+                    hyperParams[id] = parseInt(this.value);
+                    numInput.value = this.value;
+                    updateHyperparams();
+                });
+            });
+            
+            updateHyperparams();
+        }
+
+        // Initialize when page loads
+        window.addEventListener('load', function() {
+            if (document.getElementById('inputMatrix')) {
+                initHyperparams();
+            }
+        });
 
         loadData();
     </script>
