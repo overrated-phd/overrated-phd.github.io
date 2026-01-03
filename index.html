@@ -236,7 +236,6 @@
             border-radius: 8px;
             border: 2px solid #ddd;
             width: 180px;
-            text-align: center
             min-height: 300px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
@@ -340,6 +339,65 @@
             max-width: 800px;
             margin-left: auto;
             margin-right: auto;
+        }
+
+        /* Explanation Sections */
+        .explanation-container {
+            max-width: 1200px;
+            margin: 60px auto;
+            padding: 0 40px;
+        }
+
+        .explanation-section {
+            background: white;
+            padding: 40px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .explanation-section h2 {
+            color: #2c3e50;
+            font-size: 28px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid #007bff;
+        }
+
+        .explanation-section h3 {
+            color: #34495e;
+            font-size: 22px;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+
+        .explanation-section p {
+            color: #555;
+            line-height: 1.8;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+
+        .explanation-section ul {
+            margin-left: 30px;
+            margin-bottom: 15px;
+        }
+
+        .explanation-section li {
+            color: #555;
+            line-height: 1.8;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+
+        .explanation-section strong {
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .explanation-section em {
+            color: #007bff;
+            font-style: italic;
         }
 
         .controls {
@@ -909,232 +967,4 @@
         loadData();
     </script>
 </body>
-
-<section id="what-is-cnn">
-  <h2>What is a Convolutional Neural Network?</h2>
-  <p>
-    In machine learning, a <strong>classifier</strong> is a function that assigns a
-    <em>class label</em> to an input. Formally, we can think of it as a function
-    \( f \) that maps an input vector \( x \) to one of \( K \) classes:
-    \( f : \mathbb{R}^n \to \{1, 2, \dots, K\} \).
-  </p>
-  <p>
-    A <strong>Convolutional Neural Network (CNN)</strong> is a special type of neural
-    network that is very good at classifying image-like data. For an RGB image with
-    height \(H\), width \(W\), and 3 color channels, we can represent the input as a
-    3D tensor:
-    \[
-      x \in \mathbb{R}^{H \times W \times 3}.
-    \]
-    The CNN learns a function
-    \[
-      f_\theta : \mathbb{R}^{H \times W \times 3} \to \mathbb{R}^K,
-    \]
-    where \(K\) is the number of classes and \(\theta\) denotes all learnable
-    parameters (weights and biases).
-  </p>
-</section>
-
-<section id="basic-building-blocks">
-  <h2>Basic Building Blocks</h2>
-  <h3>Tensors</h3>
-  <p>
-    A <strong>tensor</strong> is a generalization of vectors and matrices to
-    multiple dimensions. In our CNN:
-  </p>
-  <ul>
-    <li>The input image is a 3D tensor \( x \in \mathbb{R}^{H \times W \times C} \).</li>
-    <li>Each hidden layer produces an <strong>activation tensor</strong>
-        \( a^{(l)} \in \mathbb{R}^{H_l \times W_l \times C_l} \).</li>
-    <li>The final layer produces a 1D output vector
-        \( z \in \mathbb{R}^K \) of class scores.</li>
-  </ul>
-
-  <h3>Neurons</h3>
-  <p>
-    A <strong>neuron</strong> computes a weighted sum of its inputs plus a bias,
-    then applies a non-linear activation function. In its simplest form:
-    \[
-      y = \phi(w^\top x + b),
-    \]
-    where \(x\) is the input vector, \(w\) is the weight vector,
-    \(b\) is the bias, and \(\phi\) is a non-linear function such as ReLU.
-  </p>
-
-  <h3>Layers</h3>
-  <p>
-    A <strong>layer</strong> is a collection of neurons that apply the same
-    operation (same type of computation, same hyperparameters) to different
-    positions or units. In CNNs we mainly use:
-  </p>
-  <ul>
-    <li>Convolutional layers</li>
-    <li>Non-linear activation layers (e.g., ReLU)</li>
-    <li>Pooling layers</li>
-    <li>Fully connected (dense) layers</li>
-    <li>Softmax output layer</li>
-  </ul>
-</section>
-
-<section id="convolutional-layer">
-  <h2>Convolutional Layers (Core of a CNN)</h2>
-  <p>
-    The <strong>convolutional layer</strong> learns a set of kernels (filters)
-    that detect local patterns in the image, such as edges, corners, or textures.
-    Suppose the input to the layer is a tensor
-    \[
-      a^{(l-1)} \in \mathbb{R}^{H_{l-1} \times W_{l-1} \times C_{l-1}},
-    \]
-    and we learn \(C_l\) kernels, each of size
-    \[
-      K_h \times K_w \times C_{l-1}.
-    \]
-    The \(j\)-th kernel is:
-    \[
-      W^{(l)}_j \in \mathbb{R}^{K_h \times K_w \times C_{l-1}},
-      \quad b^{(l)}_j \in \mathbb{R}.
-    \]
-  </p>
-  <p>
-    The output activation at spatial position \((u, v)\) in channel \(j\) is:
-    \[
-      z^{(l)}_{u,v,j}
-      = \sum_{c=1}^{C_{l-1}} \sum_{p=1}^{K_h} \sum_{q=1}^{K_w}
-        W^{(l)}_{j,p,q,c} \cdot a^{(l-1)}_{u+p-1,\, v+q-1,\, c}
-        + b^{(l)}_j.
-    \]
-    Then a non-linearity is applied:
-    \[
-      a^{(l)}_{u,v,j} = \phi\big(z^{(l)}_{u,v,j}\big).
-    \]
-  </p>
-  <p>
-    Hyperparameters such as <strong>kernel size</strong> \((K_h, K_w)\),
-    <strong>stride</strong> \(S\) (how far we move the kernel each step),
-    and <strong>padding</strong> \(P\) (how many pixels we add around the border)
-    control the spatial size of the output feature maps.
-  </p>
-</section>
-
-<section id="activation-layer">
-  <h2>Activation Function (Non-Linearity)</h2>
-  <p>
-    To allow the network to learn complex, non-linear functions, we apply an
-    activation function after each convolution or fully connected layer.
-    A common choice is the <strong>ReLU</strong> (Rectified Linear Unit):
-    \[
-      \phi(x) = \max(0, x).
-    \]
-  </p>
-  <p>
-    Applied elementwise to each activation:
-    \[
-      a^{(l)}_{u,v,j} = \max\big(0, z^{(l)}_{u,v,j}\big).
-    \]
-  </p>
-</section>
-
-<section id="pooling-layer">
-  <h2>Pooling Layers</h2>
-  <p>
-    <strong>Pooling</strong> layers downsample the spatial dimensions of the
-    activation maps, making the representation more compact and robust to small
-    translations in the input. For example, <strong>max pooling</strong> with a
-    window size \(P \times P\) and stride \(S\) is defined as:
-    \[
-      a^{(l)}_{u,v,j}
-      = \max_{\substack{0 \le p &lt; P \\ 0 \le q &lt; P}}
-        a^{(l-1)}_{u+p,\, v+q,\, j}.
-    \]
-  </p>
-  <p>
-    This operation keeps the largest response in each small region and discards
-    the rest, reducing \(H\) and \(W\) while keeping the number of channels
-    \(C\) the same.
-  </p>
-</section>
-
-<section id="fully-connected-layer">
-  <h2>Fully Connected Layers</h2>
-  <p>
-    After several rounds of convolution, activation, and pooling, we obtain a
-    high-level feature representation. We then <strong>flatten</strong> the final
-    activation tensor to a vector and feed it into one or more
-    <strong>fully connected</strong> (dense) layers.
-  </p>
-  <p>
-    If the flattened feature vector is
-    \[
-      h \in \mathbb{R}^M,
-    \]
-    and the fully connected layer has \(K\) outputs, then:
-    \[
-      z = W h + b, \quad
-      W \in \mathbb{R}^{K \times M}, \quad
-      b \in \mathbb{R}^K.
-    \]
-    Each component \(z_k\) is the <strong>score</strong> for class \(k\).
-  </p>
-</section>
-
-<section id="softmax-layer">
-  <h2>Softmax Output and Class Probabilities</h2>
-  <p>
-    To convert raw scores \(z \in \mathbb{R}^K\) into a probability distribution
-    over classes, we apply the <strong>softmax</strong> function:
-    \[
-      \hat{y}_k = \frac{\exp(z_k)}{\sum_{j=1}^K \exp(z_j)}.
-    \]
-  </p>
-  <p>
-    Here \( \hat{y}_k \) is interpreted as the estimated probability that the
-    input image belongs to class \(k\). The predicted class is:
-    \[
-      \hat{c} = \arg\max_k \hat{y}_k.
-    \]
-  </p>
-</section>
-
-<section id="learning-and-training">
-  <h2>How Does a CNN Learn?</h2>
-  <p>
-    All kernels and biases in the network are collected into a parameter set
-    \(\theta\). During training, we are given input–label pairs
-    \((x^{(i)}, y^{(i)})\), where \(y^{(i)}\) is the true class for image
-    \(x^{(i)}\).
-  </p>
-  <p>
-    We define a loss function, typically the <strong>cross-entropy loss</strong>:
-    \[
-      \mathcal{L}(\theta)
-      = - \sum_{i} \sum_{k=1}^K
-        \mathbf{1}\{y^{(i)} = k\} \log \hat{y}^{(i)}_k,
-    \]
-    where \(\hat{y}^{(i)}_k\) is the softmax probability output by the network
-    for class \(k\) on example \(i\).
-  </p>
-  <p>
-    Using <strong>backpropagation</strong> and an optimization algorithm such as
-    gradient descent, we iteratively update the parameters:
-    \[
-      \theta \leftarrow \theta - \eta \nabla_\theta \mathcal{L}(\theta),
-    \]
-    where \(\eta\) is the learning rate. Over time, the CNN learns kernels and
-    weights that minimize the loss and improve classification accuracy.
-  </p>
-</section>
-
-<section id="summary">
-  <h2>Summary</h2>
-  <p>
-    A Convolutional Neural Network is a differentiable function
-    \( f_\theta \) that maps input images to class probabilities through a
-    sequence of tensor operations: convolutions, non-linear activations,
-    pooling, and fully connected layers, ending with a softmax. By learning the
-    parameters \(\theta\) from data, CNNs automatically discover useful visual
-    features for tasks such as image classification, segmentation, and object
-    detection.
-  </p>
-</section>
-
 </html>
