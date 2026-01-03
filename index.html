@@ -528,6 +528,14 @@
             justify-content: center;
         }
 
+        .vertical-arrow {
+            font-size: 40px;
+            color: #aaa;
+            text-align: center;
+            margin: 10px 0;
+            user-select: none;
+        }
+
         .matrix-container {
             text-align: center;
         }
@@ -554,8 +562,8 @@
         }
 
         .matrix-cell {
-            width: 40px;
-            height: 40px;
+            width: 20px;
+            height: 20px;
             background: #e8e8e8;
             border: none;
             transition: all 0.2s;
@@ -944,6 +952,8 @@
                         </div>
                     </div>
                     
+                    <div class="vertical-arrow">↓</div>
+                    
                     <div class="matrix-row">
                         <div class="matrix-container">
                             <div class="matrix-title">Input <span id="inputDims">(5, 5)</span></div>
@@ -951,6 +961,8 @@
                             <div class="matrix-grid" id="inputMatrix"></div>
                         </div>
                     </div>
+                    
+                    <div class="vertical-arrow">↓</div>
                     
                     <div class="matrix-row">
                         <div class="matrix-container">
@@ -1505,9 +1517,9 @@
             inputMatrix.innerHTML = '';
             outputMatrix.innerHTML = '';
             
-            inputMatrixOrig.style.gridTemplateColumns = `repeat(${inputSize}, 40px)`;
-            inputMatrix.style.gridTemplateColumns = `repeat(${paddedSize}, 40px)`;
-            outputMatrix.style.gridTemplateColumns = `repeat(${outputSize}, 40px)`;
+            inputMatrixOrig.style.gridTemplateColumns = `repeat(${inputSize}, 20px)`;
+            inputMatrix.style.gridTemplateColumns = `repeat(${paddedSize}, 20px)`;
+            outputMatrix.style.gridTemplateColumns = `repeat(${outputSize}, 20px)`;
             
             // Create original input matrix cells (before padding)
             for (let i = 0; i < inputSize * inputSize; i++) {
