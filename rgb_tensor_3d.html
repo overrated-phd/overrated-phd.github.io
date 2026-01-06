@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D RGB Tensor Visualization</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #fff;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            padding: 30px 0;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #94a3b8;
+            font-size: 1.1rem;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 24px;
+            margin-top: 20px;
+        }
+        
+        .canvas-container {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            position: relative;
+            min-height: 500px;
+        }
+        
+        #tensorCanvas {
+            width: 100%;
+            height: 500px;
+            display: block;
+        }
+        
+        .controls-panel {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 24px;
+        }
+        
+        .control-group {
+            margin-bottom: 24px;
+        }
+        
+        .control-group h3 {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #94a3b8;
+            margin-bottom: 12px;
+        }
+        
+        .slider-control {
+            margin-bottom: 16px;
+        }
+        
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 0.9rem;
+        }
+        
+        .slider-value {
+            color: #4ecdc4;
+            font-weight: 600;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4ecdc4, #45b7d1);
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(78, 205, 196, 0.4);
+        }
+        
+        .channel-toggles {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .channel-btn {
+            flex: 1;
+            padding: 12px 8px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+        
+        .channel-btn.red {
+            background: rgba(255, 107, 107, 0.2);
+            color: #ff6b6b;
+            border: 2px solid #ff6b6b;
+        }
+        
+        .channel-btn.green {
+            background: rgba(78, 205, 196, 0.2);
+            color: #4ecdc4;
+            border: 2px solid #4ecdc4;
+        }
+        
+        .channel-btn.blue {
+            background: rgba(69, 183, 209, 0.2);
+            color: #45b7d1;
+            border: 2px solid #45b7d1;
+        }
+        
+        .channel-btn.active {
+            transform: scale(1.05);
+        }
+        
+        .channel-btn.red.active { background: rgba(255, 107, 107, 0.5); }
+        .channel-btn.green.active { background: rgba(78, 205, 196, 0.5); }
+        .channel-btn.blue.active { background: rgba(69, 183, 209, 0.5); }
+        
+        .channel-btn:not(.active) {
+            opacity: 0.4;
+        }
+        
+        .view-btns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        
+        .view-btn {
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: #fff;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+        }
+        
+        .view-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .view-btn.active {
+            background: linear-gradient(135deg, #4ecdc4, #45b7d1);
+            border-color: transparent;
+        }
+        
+        .info-card {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 16px;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            color: #94a3b8;
+            font-size: 0.85rem;
+        }
+        
+        .info-value {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin-top: 20px;
+            padding: 16px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+        
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+        }
+        
+        .instructions {
+            text-align: center;
+            color: #64748b;
+            font-size: 0.85rem;
+            margin-top: 12px;
+        }
+        
+        @media (max-width: 900px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>3D RGB Tensor Visualization</h1>
+            <p class="subtitle">Interactive visualization of image data as a 3-channel tensor (Height × Width × Channels)</p>
+        </header>
+        
+        <div class="main-content">
+            <div class="canvas-container">
+                <canvas id="tensorCanvas"></canvas>
+                <p class="instructions">🖱️ Drag to rotate • Scroll to zoom • Right-click drag to pan</p>
+            </div>
+            
+            <div class="controls-panel">
+                <div class="control-group">
+                    <h3>Tensor Dimensions</h3>
+                    <div class="slider-control">
+                        <div class="slider-label">
+                            <span>Height (H)</span>
+                            <span class="slider-value" id="heightValue">8</span>
+                        </div>
+                        <input type="range" id="heightSlider" min="4" max="16" value="8">
+                    </div>
+                    <div class="slider-control">
+                        <div class="slider-label">
+                            <span>Width (W)</span>
+                            <span class="slider-value" id="widthValue">8</span>
+                        </div>
+                        <input type="range" id="widthSlider" min="4" max="16" value="8">
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <h3>Channel Visibility</h3>
+                    <div class="channel-toggles">
+                        <button class="channel-btn red active" data-channel="r">R</button>
+                        <button class="channel-btn green active" data-channel="g">G</button>
+                        <button class="channel-btn blue active" data-channel="b">B</button>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <h3>Display Options</h3>
+                    <div class="slider-control">
+                        <div class="slider-label">
+                            <span>Cell Spacing</span>
+                            <span class="slider-value" id="spacingValue">0.2</span>
+                        </div>
+                        <input type="range" id="spacingSlider" min="0" max="50" value="20">
+                    </div>
+                    <div class="slider-control">
+                        <div class="slider-label">
+                            <span>Channel Gap</span>
+                            <span class="slider-value" id="gapValue">2.0</span>
+                        </div>
+                        <input type="range" id="gapSlider" min="10" max="50" value="20">
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <h3>View Presets</h3>
+                    <div class="view-btns">
+                        <button class="view-btn active" data-view="perspective">3D View</button>
+                        <button class="view-btn" data-view="front">Front</button>
+                        <button class="view-btn" data-view="top">Top</button>
+                        <button class="view-btn" data-view="side">Side</button>
+                    </div>
+                </div>
+                
+                <div class="info-card">
+                    <div class="info-row">
+                        <span class="info-label">Tensor Shape</span>
+                        <span class="info-value" id="tensorShape">8 × 8 × 3</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Total Elements</span>
+                        <span class="info-value" id="totalElements">192</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Data Type</span>
+                        <span class="info-value">uint8 [0-255]</span>
+                    </div>
+                </div>
+                
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #ff6b6b;"></div>
+                        <span>Red Channel</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #4ecdc4;"></div>
+                        <span>Green Channel</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #45b7d1;"></div>
+                        <span>Blue Channel</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Scene setup
+        const canvas = document.getElementById('tensorCanvas');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(50, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+        
+        renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setClearColor(0x000000, 0);
+        
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(10, 20, 15);
+        scene.add(directionalLight);
+        
+        const backLight = new THREE.DirectionalLight(0xffffff, 0.3);
+        backLight.position.set(-10, -10, -10);
+        scene.add(backLight);
+        
+        // State
+        let tensorGroup = new THREE.Group();
+        scene.add(tensorGroup);
+        
+        let config = {
+            height: 8,
+            width: 8,
+            spacing: 0.2,
+            channelGap: 2.0,
+            channels: { r: true, g: true, b: true }
+        };
+        
+        // Generate random tensor data
+        function generateTensorData(h, w) {
+            const data = {
+                r: [], g: [], b: []
+            };
+            
+            for (let i = 0; i < h; i++) {
+                data.r[i] = [];
+                data.g[i] = [];
+                data.b[i] = [];
+                for (let j = 0; j < w; j++) {
+                    // Create gradient-like patterns for visual interest
+                    data.r[i][j] = Math.floor((i / h) * 200 + Math.random() * 55);
+                    data.g[i][j] = Math.floor((j / w) * 200 + Math.random() * 55);
+                    data.b[i][j] = Math.floor(((i + j) / (h + w)) * 200 + Math.random() * 55);
+                }
+            }
+            return data;
+        }
+        
+        let tensorData = generateTensorData(config.height, config.width);
+        
+        // Build tensor visualization
+        function buildTensor() {
+            // Clear existing
+            while (tensorGroup.children.length > 0) {
+                const child = tensorGroup.children[0];
+                if (child.geometry) child.geometry.dispose();
+                if (child.material) child.material.dispose();
+                tensorGroup.remove(child);
+            }
+            
+            const cellSize = 1;
+            const channels = ['r', 'g', 'b'];
+            const channelColors = {
+                r: new THREE.Color(0xff6b6b),
+                g: new THREE.Color(0x4ecdc4),
+                b: new THREE.Color(0x45b7d1)
+            };
+            
+            const totalWidth = config.width * (cellSize + config.spacing);
+            const totalHeight = config.height * (cellSize + config.spacing);
+            
+            channels.forEach((channel, channelIndex) => {
+                if (!config.channels[channel]) return;
+                
+                const channelGroup = new THREE.Group();
+                const zOffset = channelIndex * config.channelGap;
+                
+                for (let i = 0; i < config.height; i++) {
+                    for (let j = 0; j < config.width; j++) {
+                        const value = tensorData[channel][i] ? tensorData[channel][i][j] || 0 : 0;
+                        const normalizedValue = value / 255;
+                        
+                        // Create cube
+                        const geometry = new THREE.BoxGeometry(cellSize * 0.9, cellSize * 0.9, cellSize * 0.5);
+                        
+                        // Color based on value intensity
+                        const baseColor = channelColors[channel].clone();
+                        const material = new THREE.MeshPhongMaterial({
+                            color: baseColor,
+                            transparent: true,
+                            opacity: 0.3 + normalizedValue * 0.7,
+                            emissive: baseColor.clone().multiplyScalar(normalizedValue * 0.3)
+                        });
+                        
+                        const cube = new THREE.Mesh(geometry, material);
+                        cube.position.set(
+                            j * (cellSize + config.spacing) - totalWidth / 2 + cellSize / 2,
+                            -i * (cellSize + config.spacing) + totalHeight / 2 - cellSize / 2,
+                            zOffset
+                        );
+                        
+                        channelGroup.add(cube);
+                    }
+                }
+                
+                // Add channel label
+                tensorGroup.add(channelGroup);
+            });
+            
+            // Update info
+            document.getElementById('tensorShape').textContent = `${config.height} × ${config.width} × 3`;
+            document.getElementById('totalElements').textContent = (config.height * config.width * 3).toLocaleString();
+        }
+        
+        // Camera controls (simple orbit)
+        let isDragging = false;
+        let isPanning = false;
+        let previousMousePosition = { x: 0, y: 0 };
+        let rotation = { x: 0.3, y: -0.5 };
+        let zoom = 20;
+        let panOffset = { x: 0, y: 0 };
+        
+        function updateCamera() {
+            const radius = zoom;
+            camera.position.x = radius * Math.sin(rotation.y) * Math.cos(rotation.x) + panOffset.x;
+            camera.position.y = radius * Math.sin(rotation.x) + panOffset.y;
+            camera.position.z = radius * Math.cos(rotation.y) * Math.cos(rotation.x);
+            camera.lookAt(panOffset.x, panOffset.y, 0);
+        }
+        
+        canvas.addEventListener('mousedown', (e) => {
+            if (e.button === 2) {
+                isPanning = true;
+            } else {
+                isDragging = true;
+            }
+            previousMousePosition = { x: e.clientX, y: e.clientY };
+        });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            const deltaX = e.clientX - previousMousePosition.x;
+            const deltaY = e.clientY - previousMousePosition.y;
+            
+            if (isDragging) {
+                rotation.y += deltaX * 0.01;
+                rotation.x += deltaY * 0.01;
+                rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, rotation.x));
+                updateCamera();
+            }
+            
+            if (isPanning) {
+                panOffset.x -= deltaX * 0.02;
+                panOffset.y += deltaY * 0.02;
+                updateCamera();
+            }
+            
+            previousMousePosition = { x: e.clientX, y: e.clientY };
+        });
+        
+        canvas.addEventListener('mouseup', () => {
+            isDragging = false;
+            isPanning = false;
+        });
+        
+        canvas.addEventListener('mouseleave', () => {
+            isDragging = false;
+            isPanning = false;
+        });
+        
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            zoom += e.deltaY * 0.02;
+            zoom = Math.max(10, Math.min(50, zoom));
+            updateCamera();
+        });
+        
+        canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+        
+        // Controls
+        document.getElementById('heightSlider').addEventListener('input', (e) => {
+            config.height = parseInt(e.target.value);
+            document.getElementById('heightValue').textContent = config.height;
+            tensorData = generateTensorData(config.height, config.width);
+            buildTensor();
+        });
+        
+        document.getElementById('widthSlider').addEventListener('input', (e) => {
+            config.width = parseInt(e.target.value);
+            document.getElementById('widthValue').textContent = config.width;
+            tensorData = generateTensorData(config.height, config.width);
+            buildTensor();
+        });
+        
+        document.getElementById('spacingSlider').addEventListener('input', (e) => {
+            config.spacing = parseInt(e.target.value) / 100;
+            document.getElementById('spacingValue').textContent = config.spacing.toFixed(2);
+            buildTensor();
+        });
+        
+        document.getElementById('gapSlider').addEventListener('input', (e) => {
+            config.channelGap = parseInt(e.target.value) / 10;
+            document.getElementById('gapValue').textContent = config.channelGap.toFixed(1);
+            buildTensor();
+        });
+        
+        document.querySelectorAll('.channel-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const channel = btn.dataset.channel;
+                config.channels[channel] = !config.channels[channel];
+                btn.classList.toggle('active');
+                buildTensor();
+            });
+        });
+        
+        document.querySelectorAll('.view-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                panOffset = { x: 0, y: 0 };
+                
+                switch (btn.dataset.view) {
+                    case 'front':
+                        rotation = { x: 0, y: 0 };
+                        break;
+                    case 'top':
+                        rotation = { x: Math.PI / 2, y: 0 };
+                        break;
+                    case 'side':
+                        rotation = { x: 0, y: Math.PI / 2 };
+                        break;
+                    case 'perspective':
+                    default:
+                        rotation = { x: 0.3, y: -0.5 };
+                        break;
+                }
+                updateCamera();
+            });
+        });
+        
+        // Resize handler
+        window.addEventListener('resize', () => {
+            const width = canvas.clientWidth;
+            const height = canvas.clientHeight;
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, height);
+        });
+        
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+        
+        // Initialize
+        buildTensor();
+        updateCamera();
+        animate();
+    </script>
+</body>
+</html>
