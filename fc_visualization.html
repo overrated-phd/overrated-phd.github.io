@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fully Connected Layers in CNNs</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #e8e8e8;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            background: linear-gradient(90deg, #00d9ff, #00ff88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 15px;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #a0a0a0;
+        }
+
+        .section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 40px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .section h2 {
+            color: #00d9ff;
+            margin-bottom: 25px;
+            font-size: 1.8rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section h2::before {
+            content: '';
+            width: 4px;
+            height: 28px;
+            background: linear-gradient(180deg, #00d9ff, #00ff88);
+            border-radius: 2px;
+        }
+
+        /* CNN Architecture Visualization */
+        .cnn-architecture {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            padding: 40px 20px;
+            overflow-x: auto;
+            position: relative;
+        }
+
+        .layer-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .layer-label {
+            font-size: 0.85rem;
+            color: #888;
+            text-align: center;
+            max-width: 100px;
+        }
+
+        .input-image {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(45deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3);
+            border-radius: 8px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            gap: 2px;
+            padding: 4px;
+        }
+
+        .input-image div {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 2px;
+        }
+
+        .conv-layer {
+            display: flex;
+            gap: 4px;
+        }
+
+        .feature-map {
+            width: 50px;
+            height: 50px;
+            border-radius: 6px;
+            position: relative;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .feature-map.fm1 { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .feature-map.fm2 { background: linear-gradient(135deg, #f093fb, #f5576c); transform: translateY(5px); }
+        .feature-map.fm3 { background: linear-gradient(135deg, #4facfe, #00f2fe); transform: translateY(-5px); }
+
+        .pooling-layer .feature-map {
+            width: 35px;
+            height: 35px;
+        }
+
+        .arrow {
+            width: 40px;
+            height: 2px;
+            background: linear-gradient(90deg, rgba(0, 217, 255, 0.3), rgba(0, 255, 136, 0.8));
+            position: relative;
+            align-self: center;
+        }
+
+        .arrow::after {
+            content: '';
+            position: absolute;
+            right: -6px;
+            top: -4px;
+            border: 5px solid transparent;
+            border-left: 8px solid #00ff88;
+        }
+
+        .flatten-visual {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .flatten-node {
+            width: 12px;
+            height: 12px;
+            background: linear-gradient(135deg, #ffecd2, #fcb69f);
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(252, 182, 159, 0.4);
+        }
+
+        /* Process Flow */
+        .process-flow {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 30px 0;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .process-step {
+            flex: 1;
+            min-width: 150px;
+            text-align: center;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            position: relative;
+        }
+
+        .process-step::after {
+            content: '→';
+            position: absolute;
+            right: -25px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.5rem;
+            color: #00ff88;
+        }
+
+        .process-step:last-child::after {
+            display: none;
+        }
+
+        .step-number {
+            width: 35px;
+            height: 35px;
+            background: linear-gradient(135deg, #00d9ff, #00ff88);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            font-weight: bold;
+            color: #1a1a2e;
+        }
+
+        .step-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #fff;
+        }
+
+        .step-desc {
+            font-size: 0.85rem;
+            color: #888;
+        }
+
+        /* Interactive Demo */
+        .demo-container {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 30px;
+        }
+
+        .demo-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 30px;
+            justify-content: center;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-group label {
+            font-size: 0.9rem;
+            color: #888;
+        }
+
+        input[type="range"] {
+            width: 150px;
+            height: 6px;
+            -webkit-appearance: none;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: linear-gradient(135deg, #00d9ff, #00ff88);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .demo-output {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 300px;
+            position: relative;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 2rem; }
+            .section { padding: 25px; }
+            .process-step::after { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Fully Connected Layers in CNNs</h1>
+            <p class="subtitle">Understanding the classification backbone of Convolutional Neural Networks</p>
+        </header>
+
+        <!-- CNN Architecture Overview -->
+        <section class="section">
+            <h2>CNN Architecture Overview</h2>
+            <p style="margin-bottom: 30px; color: #a0a0a0; line-height: 1.8;">
+                A typical CNN consists of convolutional layers for feature extraction, pooling layers for dimensionality reduction, 
+                and fully connected layers for classification. The FC layers come at the end, transforming learned features into final predictions.
+            </p>
+            
+            <div class="cnn-architecture">
+                <div class="layer-group">
+                    <div class="input-image">
+                        <div></div><div></div><div></div><div></div>
+                        <div></div><div></div><div></div><div></div>
+                        <div></div><div></div><div></div><div></div>
+                        <div></div><div></div><div></div><div></div>
+                    </div>
+                    <span class="layer-label">Input Image</span>
+                </div>
+                
+                <div class="arrow"></div>
+                
+                <div class="layer-group">
+                    <div class="conv-layer">
+                        <div class="feature-map fm1"></div>
+                        <div class="feature-map fm2"></div>
+                        <div class="feature-map fm3"></div>
+                    </div>
+                    <span class="layer-label">Conv + ReLU</span>
+                </div>
+                
+                <div class="arrow"></div>
+                
+                <div class="layer-group pooling-layer">
+                    <div class="conv-layer">
+                        <div class="feature-map fm1"></div>
+                        <div class="feature-map fm2"></div>
+                        <div class="feature-map fm3"></div>
+                    </div>
+                    <span class="layer-label">Pooling</span>
+                </div>
+                
+                <div class="arrow"></div>
+                
+                <div class="layer-group">
+                    <div class="flatten-visual">
+                        <div class="flatten-node"></div>
+                        <div class="flatten-node"></div>
+                        <div class="flatten-node"></div>
+                        <div class="flatten-node"></div>
+                        <div class="flatten-node"></div>
+                    </div>
+                    <span class="layer-label">Flatten</span>
+                </div>
+                
+                <div class="arrow"></div>
+                
+                <div class="layer-group">
+                    <div style="display: flex; gap: 20px;">
+                        <div class="flatten-visual">
+                            <div class="flatten-node" style="background: linear-gradient(135deg, #f093fb, #f5576c);"></div>
+                            <div class="flatten-node" style="background: linear-gradient(135deg, #f093fb, #f5576c);"></div>
+                            <div class="flatten-node" style="background: linear-gradient(135deg, #f093fb, #f5576c);"></div>
+                            <div class="flatten-node" style="background: linear-gradient(135deg, #f093fb, #f5576c);"></div>
+                        </div>
+                        <div class="flatten-visual">
+                            <div class="flatten-node" style="background: linear-gradient(135deg, #00d9ff, #00ff88);"></div>
+                            <div class="flatten-node" style="background: linear-gradient(135deg, #00d9ff, #00ff88);"></div>
+                            <div class="flatten-node" style="background: linear-gradient(135deg, #00d9ff, #00ff88);"></div>
+                        </div>
+                    </div>
+                    <span class="layer-label">Fully Connected Layers</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Data Flow -->
+        <section class="section">
+            <h2>Data Flow Through FC Layers</h2>
+            
+            <div class="process-flow">
+                <div class="process-step">
+                    <div class="step-number">1</div>
+                    <div class="step-title">Flatten</div>
+                    <div class="step-desc">Convert 3D feature maps to 1D vector</div>
+                </div>
+                <div class="process-step">
+                    <div class="step-number">2</div>
+                    <div class="step-title">Linear Transform</div>
+                    <div class="step-desc">Multiply by weight matrix</div>
+                </div>
+                <div class="process-step">
+                    <div class="step-number">3</div>
+                    <div class="step-title">Add Bias</div>
+                    <div class="step-desc">Add bias to each neuron</div>
+                </div>
+                <div class="process-step">
+                    <div class="step-number">4</div>
+                    <div class="step-title">Activation</div>
+                    <div class="step-desc">Apply non-linear function</div>
+                </div>
+                <div class="process-step">
+                    <div class="step-number">5</div>
+                    <div class="step-title">Output</div>
+                    <div class="step-desc">Softmax for classification</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Build Your Own FC Network -->
+        <section class="section">
+            <h2>Build Your Own FC Network</h2>
+            
+            <div class="demo-container">
+                <div class="demo-controls">
+                    <div class="control-group">
+                        <label>Input Neurons: <span id="inputCount">6</span></label>
+                        <input type="range" id="inputSlider" min="3" max="10" value="6">
+                    </div>
+                    <div class="control-group">
+                        <label>Hidden Layer 1: <span id="hidden1Count">5</span></label>
+                        <input type="range" id="hidden1Slider" min="2" max="8" value="5">
+                    </div>
+                    <div class="control-group">
+                        <label>Hidden Layer 2: <span id="hidden2Count">4</span></label>
+                        <input type="range" id="hidden2Slider" min="2" max="6" value="4">
+                    </div>
+                    <div class="control-group">
+                        <label>Output Neurons: <span id="outputCount">3</span></label>
+                        <input type="range" id="outputSlider" min="2" max="5" value="3">
+                    </div>
+                </div>
+                
+                <div class="demo-output" id="demoOutput">
+                    <!-- Dynamic network will be rendered here -->
+                </div>
+                
+                <div style="text-align: center; margin-top: 20px;">
+                    <p style="color: #888;">Total Parameters: <span id="paramCount" style="color: #00ff88; font-size: 1.3rem; font-weight: bold;">0</span></p>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <p>Interactive Visualization of Fully Connected Layers in CNNs</p>
+        </footer>
+    </div>
+
+    <script>
+        // Interactive demo
+        function updateDemo() {
+            const inputCount = parseInt(document.getElementById('inputSlider').value);
+            const hidden1Count = parseInt(document.getElementById('hidden1Slider').value);
+            const hidden2Count = parseInt(document.getElementById('hidden2Slider').value);
+            const outputCount = parseInt(document.getElementById('outputSlider').value);
+            
+            document.getElementById('inputCount').textContent = inputCount;
+            document.getElementById('hidden1Count').textContent = hidden1Count;
+            document.getElementById('hidden2Count').textContent = hidden2Count;
+            document.getElementById('outputCount').textContent = outputCount;
+            
+            // Calculate parameters
+            const params = (inputCount * hidden1Count + hidden1Count) + 
+                          (hidden1Count * hidden2Count + hidden2Count) + 
+                          (hidden2Count * outputCount + outputCount);
+            document.getElementById('paramCount').textContent = params.toLocaleString();
+            
+            // Render mini network
+            renderMiniNetwork(inputCount, hidden1Count, hidden2Count, outputCount);
+        }
+        
+        function renderMiniNetwork(input, h1, h2, output) {
+            const container = document.getElementById('demoOutput');
+            container.innerHTML = '';
+            
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('width', '100%');
+            svg.setAttribute('height', '300');
+            svg.setAttribute('viewBox', '0 0 600 300');
+            
+            const layers = [input, h1, h2, output];
+            const colors = ['#667eea', '#f093fb', '#f093fb', '#00ff88'];
+            const xPositions = [80, 230, 380, 520];
+            
+            const positions = [];
+            
+            // Draw neurons and store positions
+            layers.forEach((count, layerIndex) => {
+                positions[layerIndex] = [];
+                const startY = (300 - count * 35) / 2;
+                
+                for (let i = 0; i < count; i++) {
+                    const y = startY + i * 35 + 15;
+                    positions[layerIndex].push({ x: xPositions[layerIndex], y });
+                    
+                    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    circle.setAttribute('cx', xPositions[layerIndex]);
+                    circle.setAttribute('cy', y);
+                    circle.setAttribute('r', 12);
+                    circle.setAttribute('fill', colors[layerIndex]);
+                    circle.setAttribute('opacity', '0.9');
+                    svg.appendChild(circle);
+                }
+            });
+            
+            // Draw connections (behind neurons)
+            for (let l = 0; l < positions.length - 1; l++) {
+                positions[l].forEach(pos1 => {
+                    positions[l + 1].forEach(pos2 => {
+                        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                        line.setAttribute('x1', pos1.x);
+                        line.setAttribute('y1', pos1.y);
+                        line.setAttribute('x2', pos2.x);
+                        line.setAttribute('y2', pos2.y);
+                        line.setAttribute('stroke', 'rgba(255,255,255,0.1)');
+                        line.setAttribute('stroke-width', '1');
+                        svg.insertBefore(line, svg.firstChild);
+                    });
+                });
+            }
+            
+            // Add labels
+            const labels = ['Input', 'Hidden 1', 'Hidden 2', 'Output'];
+            labels.forEach((label, i) => {
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', xPositions[i]);
+                text.setAttribute('y', 280);
+                text.setAttribute('text-anchor', 'middle');
+                text.setAttribute('fill', '#888');
+                text.setAttribute('font-size', '12');
+                text.textContent = label;
+                svg.appendChild(text);
+            });
+            
+            container.appendChild(svg);
+        }
+        
+        // Event listeners
+        document.getElementById('inputSlider').addEventListener('input', updateDemo);
+        document.getElementById('hidden1Slider').addEventListener('input', updateDemo);
+        document.getElementById('hidden2Slider').addEventListener('input', updateDemo);
+        document.getElementById('outputSlider').addEventListener('input', updateDemo);
+        
+        // Initialize
+        window.addEventListener('load', () => {
+            updateDemo();
+        });
+    </script>
+</body>
+</html>
