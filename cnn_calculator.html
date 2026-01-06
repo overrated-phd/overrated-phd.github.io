@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CNN Calculation Simulator</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        h1 {
+            text-align: center; font-size: 2.2rem; margin-bottom: 8px;
+            background: linear-gradient(90deg, #00d9ff, #00ff88);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .subtitle { text-align: center; color: #8892b0; margin-bottom: 25px; }
+        .phase-nav { display: flex; justify-content: center; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; }
+        .phase-btn {
+            padding: 10px 20px; border: 2px solid rgba(100, 255, 218, 0.3);
+            background: rgba(255, 255, 255, 0.05); color: #8892b0;
+            border-radius: 25px; cursor: pointer; transition: all 0.3s ease;
+            font-size: 0.85rem; font-weight: 600;
+        }
+        .phase-btn:hover, .phase-btn.active {
+            background: rgba(100, 255, 218, 0.1); border-color: #64ffda; color: #64ffda;
+        }
+        .phase-btn.active { box-shadow: 0 0 20px rgba(100, 255, 218, 0.3); }
+        .visualization-area {
+            background: rgba(255, 255, 255, 0.03); border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1); padding: 30px; margin-bottom: 20px;
+        }
+        .phase-title { text-align: center; color: #64ffda; font-size: 1.4rem; margin-bottom: 20px; }
+        .phase-description { text-align: center; color: #8892b0; margin-bottom: 25px; line-height: 1.6; }
+        .calculation-container { display: flex; align-items: center; justify-content: center; gap: 30px; flex-wrap: wrap; }
+        .matrix-section { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        .matrix-label { color: #64ffda; font-size: 0.9rem; font-weight: 600; }
+        .matrix {
+            display: grid; gap: 3px; padding: 10px; background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px; border: 2px solid rgba(100, 255, 218, 0.2);
+        }
+        .matrix-cell {
+            width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+            font-size: 0.75rem; font-weight: bold; border-radius: 5px; transition: all 0.3s ease;
+        }
+        .matrix-cell.input { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .matrix-cell.kernel { background: linear-gradient(135deg, #f093fb, #f5576c); }
+        .matrix-cell.output { background: linear-gradient(135deg, #11998e, #38ef7d); }
+        .matrix-cell.highlight { transform: scale(1.15); box-shadow: 0 0 15px rgba(255, 255, 255, 0.5); z-index: 10; }
+        .matrix-cell.pooling { background: linear-gradient(135deg, #fa709a, #fee140); }
+        .operator { font-size: 2rem; color: #64ffda; }
+        .calculation-display {
+            background: rgba(0, 0, 0, 0.4); border-radius: 15px; padding: 20px;
+            margin-top: 25px; border: 1px solid rgba(100, 255, 218, 0.2);
+        }
+        .calc-title { color: #64ffda; font-size: 1rem; margin-bottom: 15px; text-align: center; }
+        .calc-steps { font-family: 'Courier New', monospace; font-size: 0.9rem; line-height: 1.8; color: #ccd6f6; }
+        .calc-step { padding: 8px 15px; margin: 5px 0; border-radius: 8px; transition: all 0.3s ease; }
+        .calc-step.active { background: rgba(100, 255, 218, 0.1); border-left: 3px solid #64ffda; }
+        .calc-step .highlight-num { color: #64ffda; font-weight: bold; }
+        .calc-step .highlight-op { color: #f093fb; }
+        .calc-step .highlight-result { color: #38ef7d; font-weight: bold; }
+        .controls { display: flex; justify-content: center; gap: 15px; margin-top: 20px; flex-wrap: wrap; }
+        .btn {
+            padding: 12px 30px; border: none; border-radius: 25px;
+            font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease;
+        }
+        .btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+        .btn-secondary { background: transparent; color: #64ffda; border: 2px solid #64ffda; }
+        .btn:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .speed-control { display: flex; align-items: center; gap: 10px; justify-content: center; margin-top: 15px; }
+        .speed-control label { color: #8892b0; font-size: 0.85rem; }
+        .speed-slider { width: 150px; accent-color: #64ffda; }
+        .neuron-container { display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap; }
+        .neuron-inputs { display: flex; flex-direction: column; gap: 15px; }
+        .neuron-input-row { display: flex; align-items: center; gap: 10px; }
+        .input-value, .weight-value {
+            width: 55px; height: 55px; border-radius: 50%; display: flex;
+            align-items: center; justify-content: center; font-weight: bold; font-size: 0.7rem;
+        }
+        .input-value { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .weight-value { background: linear-gradient(135deg, #fa709a, #fee140); color: #1a1a2e; }
+        .multiply-symbol { color: #64ffda; font-size: 1.2rem; }
+        .product-value {
+            width: 55px; height: 30px; background: rgba(100, 255, 218, 0.2);
+            border: 2px solid #64ffda; border-radius: 8px; display: flex;
+            align-items: center; justify-content: center; font-size: 0.75rem; color: #64ffda;
+        }
+        .sum-neuron {
+            width: 100px; height: 100px; border-radius: 50%;
+            background: linear-gradient(135deg, #f093fb, #f5576c);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            box-shadow: 0 0 40px rgba(240, 147, 251, 0.4);
+        }
+        .sum-neuron .sum-value { font-size: 1.2rem; font-weight: bold; }
+        .sum-neuron .sum-label { font-size: 0.7rem; opacity: 0.8; }
+        .softmax-container { display: flex; align-items: center; justify-content: center; gap: 40px; flex-wrap: wrap; }
+        .logits-section, .probabilities-section { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+        .logit-row, .prob-row { display: flex; align-items: center; gap: 10px; }
+        .class-label { width: 60px; text-align: right; color: #8892b0; font-size: 0.85rem; }
+        .logit-value {
+            width: 60px; height: 40px; background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: bold;
+        }
+        .prob-bar-container { width: 150px; height: 30px; background: rgba(0, 0, 0, 0.3); border-radius: 15px; overflow: hidden; }
+        .prob-bar {
+            height: 100%; border-radius: 15px; transition: width 0.5s ease;
+            display: flex; align-items: center; justify-content: flex-end; padding-right: 10px;
+            font-size: 0.75rem; font-weight: bold;
+        }
+        .softmax-formula { background: rgba(0, 0, 0, 0.4); padding: 20px; border-radius: 15px; text-align: center; }
+        .softmax-formula .formula-text { font-family: 'Courier New', monospace; font-size: 1.1rem; color: #64ffda; }
+        .progress-bar { width: 100%; height: 6px; background: rgba(255, 255, 255, 0.1); border-radius: 3px; margin-bottom: 20px; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #64ffda, #00ff88); border-radius: 3px; transition: width 0.3s ease; }
+        .activation-box { padding: 15px 20px; background: linear-gradient(135deg, #11998e, #38ef7d); border-radius: 10px; font-weight: bold; text-align: center; }
+        .activation-box .formula { font-size: 0.75rem; opacity: 0.8; }
+        @media (max-width: 768px) {
+            h1 { font-size: 1.6rem; }
+            .matrix-cell { width: 32px; height: 32px; font-size: 0.65rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>CNN Calculation Simulator</h1>
+        <p class="subtitle">Step-by-step visualization of neural network computations</p>
+
+        <div class="phase-nav">
+            <button class="phase-btn active" data-phase="convolution">1. Convolution</button>
+            <button class="phase-btn" data-phase="pooling">2. Max Pooling</button>
+            <button class="phase-btn" data-phase="neuron">3. Dense Neuron</button>
+            <button class="phase-btn" data-phase="relu">4. ReLU Activation</button>
+            <button class="phase-btn" data-phase="softmax">5. Softmax Output</button>
+        </div>
+
+        <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width: 0%"></div></div>
+
+        <div class="visualization-area">
+            <div id="convolution-phase" class="phase-content">
+                <h2 class="phase-title">Convolution Operation</h2>
+                <p class="phase-description">A kernel slides over input, computing element-wise multiplication and summing to produce feature maps.</p>
+                <div class="calculation-container">
+                    <div class="matrix-section">
+                        <div class="matrix-label">Input (5×5)</div>
+                        <div class="matrix" id="conv-input" style="grid-template-columns: repeat(5, 1fr);"></div>
+                    </div>
+                    <span class="operator">*</span>
+                    <div class="matrix-section">
+                        <div class="matrix-label">Kernel (3×3)</div>
+                        <div class="matrix" id="conv-kernel" style="grid-template-columns: repeat(3, 1fr);"></div>
+                    </div>
+                    <span class="operator">=</span>
+                    <div class="matrix-section">
+                        <div class="matrix-label">Output (3×3)</div>
+                        <div class="matrix" id="conv-output" style="grid-template-columns: repeat(3, 1fr);"></div>
+                    </div>
+                </div>
+                <div class="calculation-display">
+                    <div class="calc-title">Current Calculation</div>
+                    <div class="calc-steps" id="conv-calc-steps"><div class="calc-step">Click "Run Simulation" to start...</div></div>
+                </div>
+            </div>
+
+            <div id="pooling-phase" class="phase-content" style="display: none;">
+                <h2 class="phase-title">Max Pooling Operation</h2>
+                <p class="phase-description">Reduces spatial dimensions by taking maximum value from each region.</p>
+                <div class="calculation-container">
+                    <div class="matrix-section">
+                        <div class="matrix-label">Input (4×4)</div>
+                        <div class="matrix" id="pool-input" style="grid-template-columns: repeat(4, 1fr);"></div>
+                    </div>
+                    <span class="operator">→</span>
+                    <div class="matrix-section">
+                        <div class="matrix-label">2×2 Pool</div>
+                        <div style="font-size: 3rem; color: #fa709a;">⬇</div>
+                    </div>
+                    <span class="operator">→</span>
+                    <div class="matrix-section">
+                        <div class="matrix-label">Output (2×2)</div>
+                        <div class="matrix" id="pool-output" style="grid-template-columns: repeat(2, 1fr);"></div>
+                    </div>
+                </div>
+                <div class="calculation-display">
+                    <div class="calc-title">Current Calculation</div>
+                    <div class="calc-steps" id="pool-calc-steps"><div class="calc-step">Click "Run Simulation" to start...</div></div>
+                </div>
+            </div>
+
+            <div id="neuron-phase" class="phase-content" style="display: none;">
+                <h2 class="phase-title">Dense Layer Neuron</h2>
+                <p class="phase-description">Each neuron computes: z = Σ(xᵢ × wᵢ) + b</p>
+                <div class="neuron-container" id="neuron-diagram">
+                    <div class="neuron-inputs" id="neuron-inputs"></div>
+                    <div class="sum-neuron" id="sum-neuron">
+                        <span class="sum-label">Σ + bias</span>
+                        <span class="sum-value" id="sum-value">?</span>
+                    </div>
+                </div>
+                <div class="calculation-display">
+                    <div class="calc-title">Weighted Sum Calculation</div>
+                    <div class="calc-steps" id="neuron-calc-steps"><div class="calc-step">Click "Run Simulation" to start...</div></div>
+                </div>
+            </div>
+
+            <div id="relu-phase" class="phase-content" style="display: none;">
+                <h2 class="phase-title">ReLU Activation Function</h2>
+                <p class="phase-description">ReLU applies f(x) = max(0, x), zeroing out negative values.</p>
+                <div class="calculation-container">
+                    <div class="matrix-section">
+                        <div class="matrix-label">Before ReLU</div>
+                        <div class="matrix" id="relu-input" style="grid-template-columns: repeat(3, 1fr);"></div>
+                    </div>
+                    <div class="matrix-section">
+                        <div class="activation-box"><div>ReLU</div><div class="formula">max(0, x)</div></div>
+                    </div>
+                    <div class="matrix-section">
+                        <div class="matrix-label">After ReLU</div>
+                        <div class="matrix" id="relu-output" style="grid-template-columns: repeat(3, 1fr);"></div>
+                    </div>
+                </div>
+                <div class="calculation-display">
+                    <div class="calc-title">ReLU Transformation</div>
+                    <div class="calc-steps" id="relu-calc-steps"><div class="calc-step">Click "Run Simulation" to start...</div></div>
+                </div>
+            </div>
+
+            <div id="softmax-phase" class="phase-content" style="display: none;">
+                <h2 class="phase-title">Softmax Output Layer</h2>
+                <p class="phase-description">Converts raw logits into probabilities that sum to 1.</p>
+                <div class="softmax-container">
+                    <div class="logits-section">
+                        <div class="matrix-label">Raw Logits (z)</div>
+                        <div id="logits-display"></div>
+                    </div>
+                    <div class="softmax-formula"><div class="formula-text">σ(zᵢ) = eᶻⁱ / Σeᶻʲ</div></div>
+                    <div class="probabilities-section">
+                        <div class="matrix-label">Probabilities</div>
+                        <div id="probs-display"></div>
+                    </div>
+                </div>
+                <div class="calculation-display">
+                    <div class="calc-title">Softmax Calculation</div>
+                    <div class="calc-steps" id="softmax-calc-steps"><div class="calc-step">Click "Run Simulation" to start...</div></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-primary" id="runBtn" onclick="runSimulation()">▶ Run Simulation</button>
+            <button class="btn btn-secondary" onclick="resetSimulation()">↺ Reset</button>
+        </div>
+        <div class="speed-control">
+            <label>Speed:</label>
+            <input type="range" class="speed-slider" id="speedSlider" min="100" max="1500" value="600">
+            <span id="speedLabel">Medium</span>
+        </div>
+    </div>
+
+    <script>
+        const convInput = [[1,2,0,1,2],[0,1,3,2,1],[2,3,1,0,2],[1,0,2,3,1],[2,1,0,1,3]];
+        const convKernel = [[1,0,-1],[1,0,-1],[1,0,-1]];
+        const poolInput = [[1,3,2,4],[5,6,1,2],[3,2,8,1],[4,7,3,5]];
+        const neuronInputsData = [0.5, 0.8, 0.3, 0.9];
+        const neuronWeights = [0.4, -0.2, 0.6, 0.1];
+        const neuronBias = 0.5;
+        const reluInput = [[2.5,-1.2,0.8],[-0.5,3.1,-2.4],[1.7,-0.3,4.2]];
+        const softmaxLogits = [{class:'Cat',value:2.5},{class:'Dog',value:1.2},{class:'Bird',value:0.3}];
+
+        let currentPhase = 'convolution', animationSpeed = 600, isRunning = false, currentStep = 0;
+
+        document.querySelectorAll('.phase-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.phase-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentPhase = btn.dataset.phase;
+                showPhase(currentPhase);
+                resetSimulation();
+            });
+        });
+
+        document.getElementById('speedSlider').addEventListener('input', (e) => {
+            animationSpeed = 1600 - parseInt(e.target.value);
+            const labels = ['Very Slow','Slow','Medium','Fast','Very Fast'];
+            document.getElementById('speedLabel').textContent = labels[Math.min(Math.floor((parseInt(e.target.value)-100)/350), 4)];
+        });
+
+        function showPhase(phase) {
+            document.querySelectorAll('.phase-content').forEach(p => p.style.display = 'none');
+            document.getElementById(`${phase}-phase`).style.display = 'block';
+            initPhase(phase);
+        }
+
+        function initPhase(phase) {
+            currentStep = 0;
+            document.getElementById('progressFill').style.width = '0%';
+            if(phase === 'convolution') initConvolution();
+            else if(phase === 'pooling') initPooling();
+            else if(phase === 'neuron') initNeuron();
+            else if(phase === 'relu') initReLU();
+            else if(phase === 'softmax') initSoftmax();
+        }
+
+        function initConvolution() {
+            const inputEl = document.getElementById('conv-input');
+            const kernelEl = document.getElementById('conv-kernel');
+            const outputEl = document.getElementById('conv-output');
+            inputEl.innerHTML = ''; kernelEl.innerHTML = ''; outputEl.innerHTML = '';
+            convInput.forEach((row,i) => row.forEach((val,j) => {
+                const cell = document.createElement('div');
+                cell.className = 'matrix-cell input'; cell.textContent = val;
+                cell.dataset.row = i; cell.dataset.col = j; inputEl.appendChild(cell);
+            }));
+            convKernel.forEach(row => row.forEach(val => {
+                const cell = document.createElement('div');
+                cell.className = 'matrix-cell kernel'; cell.textContent = val; kernelEl.appendChild(cell);
+            }));
+            for(let i=0;i<9;i++) { const cell=document.createElement('div'); cell.className='matrix-cell output'; cell.textContent='?'; cell.style.opacity='0.5'; outputEl.appendChild(cell); }
+            document.getElementById('conv-calc-steps').innerHTML = '<div class="calc-step">Click "Run Simulation" to start...</div>';
+        }
+
+        async function runConvolution() {
+            const inputCells = document.querySelectorAll('#conv-input .matrix-cell');
+            const kernelCells = document.querySelectorAll('#conv-kernel .matrix-cell');
+            const outputCells = document.querySelectorAll('#conv-output .matrix-cell');
+            const calcSteps = document.getElementById('conv-calc-steps');
+            let outputIdx = 0;
+            for(let outRow=0;outRow<3;outRow++) {
+                for(let outCol=0;outCol<3;outCol++) {
+                    if(!isRunning) return;
+                    inputCells.forEach(c => c.classList.remove('highlight'));
+                    kernelCells.forEach(c => c.classList.add('highlight'));
+                    let sum = 0, products = [];
+                    for(let ki=0;ki<3;ki++) {
+                        for(let kj=0;kj<3;kj++) {
+                            const inRow=outRow+ki, inCol=outCol+kj;
+                            const inputCell = document.querySelector(`#conv-input .matrix-cell[data-row="${inRow}"][data-col="${inCol}"]`);
+                            if(inputCell) inputCell.classList.add('highlight');
+                            const inputVal=convInput[inRow][inCol], kernelVal=convKernel[ki][kj], product=inputVal*kernelVal;
+                            sum += product;
+                            products.push(`<span class="highlight-num">${inputVal}</span>×<span class="highlight-num">${kernelVal}</span>=<span class="highlight-result">${product}</span>`);
+                        }
+                    }
+                    calcSteps.innerHTML = `<div class="calc-step active">Position (${outRow},${outCol}):</div><div class="calc-step">${products.join(' + ')}</div><div class="calc-step active">Sum = <span class="highlight-result">${sum}</span></div>`;
+                    outputCells[outputIdx].textContent = sum; outputCells[outputIdx].style.opacity = '1'; outputIdx++;
+                    document.getElementById('progressFill').style.width = `${(++currentStep/9)*100}%`;
+                    await sleep(animationSpeed);
+                }
+            }
+            inputCells.forEach(c => c.classList.remove('highlight')); kernelCells.forEach(c => c.classList.remove('highlight'));
+            calcSteps.innerHTML += '<div class="calc-step active" style="color:#38ef7d;">✓ Convolution complete!</div>';
+        }
+
+        function initPooling() {
+            const inputEl = document.getElementById('pool-input');
+            const outputEl = document.getElementById('pool-output');
+            inputEl.innerHTML = ''; outputEl.innerHTML = '';
+            poolInput.forEach((row,i) => row.forEach((val,j) => {
+                const cell = document.createElement('div');
+                cell.className = 'matrix-cell pooling'; cell.textContent = val;
+                cell.dataset.row = i; cell.dataset.col = j; inputEl.appendChild(cell);
+            }));
+            for(let i=0;i<4;i++) { const cell=document.createElement('div'); cell.className='matrix-cell output'; cell.textContent='?'; cell.style.opacity='0.5'; outputEl.appendChild(cell); }
+            document.getElementById('pool-calc-steps').innerHTML = '<div class="calc-step">Click "Run Simulation" to start...</div>';
+        }
+
+        async function runPooling() {
+            const inputCells = document.querySelectorAll('#pool-input .matrix-cell');
+            const outputCells = document.querySelectorAll('#pool-output .matrix-cell');
+            const calcSteps = document.getElementById('pool-calc-steps');
+            const regions = [{startRow:0,startCol:0},{startRow:0,startCol:2},{startRow:2,startCol:0},{startRow:2,startCol:2}];
+            for(let i=0;i<regions.length;i++) {
+                if(!isRunning) return;
+                const {startRow,startCol} = regions[i];
+                inputCells.forEach(c => c.classList.remove('highlight'));
+                let values = [];
+                for(let r=0;r<2;r++) for(let c=0;c<2;c++) {
+                    const row=startRow+r, col=startCol+c;
+                    const cell = document.querySelector(`#pool-input .matrix-cell[data-row="${row}"][data-col="${col}"]`);
+                    if(cell) cell.classList.add('highlight');
+                    values.push(poolInput[row][col]);
+                }
+                const maxVal = Math.max(...values);
+                calcSteps.innerHTML = `<div class="calc-step active">Region ${i+1}:</div><div class="calc-step">Values: [<span class="highlight-num">${values.join(', ')}</span>]</div><div class="calc-step active">max = <span class="highlight-result">${maxVal}</span></div>`;
+                outputCells[i].textContent = maxVal; outputCells[i].style.opacity = '1';
+                document.getElementById('progressFill').style.width = `${(++currentStep/4)*100}%`;
+                await sleep(animationSpeed);
+            }
+            inputCells.forEach(c => c.classList.remove('highlight'));
+            calcSteps.innerHTML += '<div class="calc-step active" style="color:#38ef7d;">✓ Max pooling complete!</div>';
+        }
+
+        function initNeuron() {
+            const inputsEl = document.getElementById('neuron-inputs');
+            inputsEl.innerHTML = '';
+            neuronInputsData.forEach((input,i) => {
+                const row = document.createElement('div'); row.className = 'neuron-input-row';
+                row.innerHTML = `<div class="input-value" id="input-${i}">x${i+1}=${input}</div><div class="multiply-symbol">×</div><div class="weight-value" id="weight-${i}">w${i+1}=${neuronWeights[i]}</div><div class="multiply-symbol">=</div><div class="product-value" id="product-${i}">?</div>`;
+                inputsEl.appendChild(row);
+            });
+            document.getElementById('sum-value').textContent = '?';
+            document.getElementById('neuron-calc-steps').innerHTML = '<div class="calc-step">Click "Run Simulation" to start...</div>';
+        }
+
+        async function runNeuron() {
+            const calcSteps = document.getElementById('neuron-calc-steps');
+            let calcHTML = '', runningSum = 0;
+            for(let i=0;i<neuronInputsData.length;i++) {
+                if(!isRunning) return;
+                const product = (neuronInputsData[i] * neuronWeights[i]).toFixed(2);
+                runningSum += parseFloat(product);
+                document.getElementById(`input-${i}`).style.transform = 'scale(1.2)';
+                document.getElementById(`weight-${i}`).style.transform = 'scale(1.2)';
+                document.getElementById(`product-${i}`).textContent = product;
+                document.getElementById(`product-${i}`).style.background = 'rgba(100,255,218,0.3)';
+                calcHTML += `<div class="calc-step">x${i+1}×w${i+1} = <span class="highlight-num">${neuronInputsData[i]}</span>×<span class="highlight-num">${neuronWeights[i]}</span> = <span class="highlight-result">${product}</span></div>`;
+                calcSteps.innerHTML = calcHTML;
+                document.getElementById('progressFill').style.width = `${(++currentStep/6)*100}%`;
+                await sleep(animationSpeed);
+                document.getElementById(`input-${i}`).style.transform = 'scale(1)';
+                document.getElementById(`weight-${i}`).style.transform = 'scale(1)';
+            }
+            if(!isRunning) return;
+            const finalSum = (runningSum + neuronBias).toFixed(2);
+            calcHTML += `<div class="calc-step active">Sum+bias = <span class="highlight-num">${runningSum.toFixed(2)}</span>+<span class="highlight-num">${neuronBias}</span> = <span class="highlight-result">${finalSum}</span></div>`;
+            calcSteps.innerHTML = calcHTML;
+            document.getElementById('sum-value').textContent = finalSum;
+            document.getElementById('progressFill').style.width = '100%';
+            await sleep(animationSpeed);
+            calcSteps.innerHTML += '<div class="calc-step active" style="color:#38ef7d;">✓ Neuron output computed!</div>';
+        }
+
+        function initReLU() {
+            const inputEl = document.getElementById('relu-input');
+            const outputEl = document.getElementById('relu-output');
+            inputEl.innerHTML = ''; outputEl.innerHTML = '';
+            reluInput.forEach((row,i) => row.forEach((val,j) => {
+                const cell = document.createElement('div'); cell.className = 'matrix-cell input';
+                cell.textContent = val; cell.dataset.row = i; cell.dataset.col = j;
+                cell.style.background = val < 0 ? 'linear-gradient(135deg,#eb3349,#f45c43)' : 'linear-gradient(135deg,#667eea,#764ba2)';
+                inputEl.appendChild(cell);
+            }));
+            for(let i=0;i<9;i++) { const cell=document.createElement('div'); cell.className='matrix-cell output'; cell.textContent='?'; cell.style.opacity='0.5'; outputEl.appendChild(cell); }
+            document.getElementById('relu-calc-steps').innerHTML = '<div class="calc-step">Click "Run Simulation" to start...</div>';
+        }
+
+        async function runReLU() {
+            const inputCells = document.querySelectorAll('#relu-input .matrix-cell');
+            const outputCells = document.querySelectorAll('#relu-output .matrix-cell');
+            const calcSteps = document.getElementById('relu-calc-steps');
+            let idx = 0;
+            for(let i=0;i<3;i++) {
+                for(let j=0;j<3;j++) {
+                    if(!isRunning) return;
+                    inputCells.forEach(c => c.classList.remove('highlight'));
+                    inputCells[idx].classList.add('highlight');
+                    const inputVal = reluInput[i][j], outputVal = Math.max(0, inputVal);
+                    calcSteps.innerHTML = `<div class="calc-step">Input: <span class="highlight-num">${inputVal}</span></div><div class="calc-step active">max(0, ${inputVal}) = <span class="highlight-result">${outputVal}</span></div><div class="calc-step">${inputVal<0?'⚡ Zeroed!':'✓ Passed'}</div>`;
+                    outputCells[idx].textContent = outputVal; outputCells[idx].style.opacity = '1';
+                    outputCells[idx].style.background = outputVal===0 ? 'linear-gradient(135deg,#4a4a4a,#6a6a6a)' : 'linear-gradient(135deg,#11998e,#38ef7d)';
+                    document.getElementById('progressFill').style.width = `${(++currentStep/9)*100}%`;
+                    idx++;
+                    await sleep(animationSpeed);
+                }
+            }
+            inputCells.forEach(c => c.classList.remove('highlight'));
+            calcSteps.innerHTML += '<div class="calc-step active" style="color:#38ef7d;">✓ ReLU complete!</div>';
+        }
+
+        function initSoftmax() {
+            const logitsEl = document.getElementById('logits-display');
+            const probsEl = document.getElementById('probs-display');
+            logitsEl.innerHTML = ''; probsEl.innerHTML = '';
+            const colors = ['linear-gradient(90deg,#00b09b,#96c93d)','linear-gradient(90deg,#fc4a1a,#f7b733)','linear-gradient(90deg,#667eea,#764ba2)'];
+            softmaxLogits.forEach((item,i) => {
+                logitsEl.innerHTML += `<div class="logit-row"><span class="class-label">${item.class}</span><div class="logit-value" id="logit-${i}">${item.value}</div></div>`;
+                probsEl.innerHTML += `<div class="prob-row"><div class="prob-bar-container"><div class="prob-bar" id="prob-bar-${i}" style="width:0%;background:${colors[i]};"></div></div><span id="prob-text-${i}" style="width:50px;font-size:0.85rem;">?</span></div>`;
+            });
+            document.getElementById('softmax-calc-steps').innerHTML = '<div class="calc-step">Click "Run Simulation" to start...</div>';
+        }
+
+        async function runSoftmax() {
+            const calcSteps = document.getElementById('softmax-calc-steps');
+            let calcHTML = '<div class="calc-step active">Step 1: Calculate e^z</div>';
+            const expValues = softmaxLogits.map(item => Math.exp(item.value));
+            softmaxLogits.forEach((item,i) => { calcHTML += `<div class="calc-step">e^${item.value} = <span class="highlight-result">${expValues[i].toFixed(4)}</span></div>`; });
+            calcSteps.innerHTML = calcHTML;
+            document.getElementById('progressFill').style.width = '33%';
+            await sleep(animationSpeed);
+            if(!isRunning) return;
+            const sumExp = expValues.reduce((a,b) => a+b, 0);
+            calcHTML += `<div class="calc-step active">Step 2: Sum = <span class="highlight-result">${sumExp.toFixed(4)}</span></div>`;
+            calcSteps.innerHTML = calcHTML;
+            document.getElementById('progressFill').style.width = '66%';
+            await sleep(animationSpeed);
+            if(!isRunning) return;
+            calcHTML += '<div class="calc-step active">Step 3: Divide each by sum</div>';
+            const probs = expValues.map(exp => exp/sumExp);
+            for(let i=0;i<probs.length;i++) {
+                const pct = (probs[i]*100).toFixed(1);
+                calcHTML += `<div class="calc-step">${softmaxLogits[i].class}: <span class="highlight-result">${pct}%</span></div>`;
+                calcSteps.innerHTML = calcHTML;
+                document.getElementById(`prob-bar-${i}`).style.width = `${pct}%`;
+                document.getElementById(`prob-text-${i}`).textContent = `${pct}%`;
+                await sleep(animationSpeed/2);
+            }
+            document.getElementById('progressFill').style.width = '100%';
+            const maxProb = Math.max(...probs);
+            const predicted = softmaxLogits[probs.indexOf(maxProb)].class;
+            calcHTML += `<div class="calc-step active" style="color:#38ef7d;">✓ Prediction: ${predicted} (${(maxProb*100).toFixed(1)}%)</div>`;
+            calcSteps.innerHTML = calcHTML;
+        }
+
+        function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+        async function runSimulation() {
+            if(isRunning) return;
+            isRunning = true; currentStep = 0;
+            document.getElementById('runBtn').disabled = true;
+            initPhase(currentPhase);
+            await sleep(300);
+            if(currentPhase==='convolution') await runConvolution();
+            else if(currentPhase==='pooling') await runPooling();
+            else if(currentPhase==='neuron') await runNeuron();
+            else if(currentPhase==='relu') await runReLU();
+            else if(currentPhase==='softmax') await runSoftmax();
+            isRunning = false;
+            document.getElementById('runBtn').disabled = false;
+        }
+
+        function resetSimulation() {
+            isRunning = false; currentStep = 0;
+            document.getElementById('runBtn').disabled = false;
+            document.getElementById('progressFill').style.width = '0%';
+            initPhase(currentPhase);
+        }
+
+        initPhase('convolution');
+    </script>
+</body>
+</html>
