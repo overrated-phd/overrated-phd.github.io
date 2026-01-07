@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CNN Simulator - ReLU Activation</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        h1 {
+            text-align: center; font-size: 2.2rem; margin-bottom: 8px;
+            background: linear-gradient(90deg, #00d9ff, #00ff88);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .subtitle { text-align: center; color: #8892b0; margin-bottom: 25px; }
+        .phase-nav { display: flex; justify-content: center; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; }
+        .phase-btn {
+            padding: 10px 20px; border: 2px solid rgba(100, 255, 218, 0.3);
+            background: rgba(255, 255, 255, 0.05); color: #8892b0;
+            border-radius: 25px; cursor: pointer; transition: all 0.3s ease;
+            font-size: 0.85rem; font-weight: 600; text-decoration: none;
+        }
+        .phase-btn:hover, .phase-btn.active {
+            background: rgba(100, 255, 218, 0.1); border-color: #64ffda; color: #64ffda;
+        }
+        .phase-btn.active { box-shadow: 0 0 20px rgba(100, 255, 218, 0.3); }
+        .visualization-area {
+            background: rgba(255, 255, 255, 0.03); border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1); padding: 30px; margin-bottom: 20px;
+        }
+        .phase-title { text-align: center; color: #64ffda; font-size: 1.4rem; margin-bottom: 20px; }
+        .phase-description { text-align: center; color: #8892b0; margin-bottom: 25px; line-height: 1.6; }
+        .calculation-container { display: flex; align-items: center; justify-content: center; gap: 30px; flex-wrap: wrap; }
+        .matrix-section { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        .matrix-label { color: #64ffda; font-size: 0.9rem; font-weight: 600; }
+        .matrix {
+            display: grid; gap: 3px; padding: 10px; background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px; border: 2px solid rgba(100, 255, 218, 0.2);
+        }
+        .matrix-cell {
+            width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+            font-size: 0.75rem; font-weight: bold; border-radius: 5px; transition: all 0.3s ease;
+        }
+        .matrix-cell.input { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .matrix-cell.output { background: linear-gradient(135deg, #11998e, #38ef7d); }
+        .matrix-cell.highlight { transform: scale(1.15); box-shadow: 0 0 15px rgba(255, 255, 255, 0.5); z-index: 10; }
+        .calculation-display {
+            background: rgba(0, 0, 0, 0.4); border-radius: 15px; padding: 20px;
+            margin-top: 25px; border: 1px solid rgba(100, 255, 218, 0.2);
+        }
+        .calc-title { color: #64ffda; font-size: 1rem; margin-bottom: 15px; text-align: center; }
+        .calc-steps { font-family: 'Courier New', monospace; font-size: 0.9rem; line-height: 1.8; color: #ccd6f6; }
+        .calc-step { padding: 8px 15px; margin: 5px 0; border-radius: 8px; transition: all 0.3s ease; }
+        .calc-step.active { background: rgba(100, 255, 218, 0.1); border-left: 3px solid #64ffda; }
+        .calc-step .highlight-num { color: #64ffda; font-weight: bold; }
+        .calc-step .highlight-result { color: #38ef7d; font-weight: bold; }
+        .controls { display: flex; justify-content: center; gap: 15px; margin-top: 20px; flex-wrap: wrap; }
+        .btn {
+            padding: 12px 30px; border: none; border-radius: 25px;
+            font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease;
+        }
+        .btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+        .btn-secondary { background: transparent; color: #64ffda; border: 2px solid #64ffda; }
+        .btn:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .speed-control { display: flex; align-items: center; gap: 10px; justify-content: center; margin-top: 15px; }
+        .speed-control label { color: #8892b0; font-size: 0.85rem; }
+        .speed-slider { width: 150px; accent-color: #64ffda; }
+        .progress-bar { width: 100%; height: 6px; background: rgba(255, 255, 255, 0.1); border-radius: 3px; margin-bottom: 20px; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #64ffda, #00ff88); border-radius: 3px; transition: width 0.3s ease; }
+        .activation-box { padding: 15px 20px; background: linear-gradient(135deg, #11998e, #38ef7d); border-radius: 10px; font-weight: bold; text-align: center; }
+        .activation-box .formula { font-size: 0.75rem; opacity: 0.8; }
+        @media (max-width: 768px) {
+            h1 { font-size: 1.6rem; }
+            .matrix-cell { width: 32px; height: 32px; font-size: 0.65rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>CNN Calculation Simulator</h1>
+        <p class="subtitle">Step-by-step visualization of neural network computations</p>
+
+        <div class="phase-nav">
+            <a class="phase-btn" href="1_convolution.html">1. Convolution</a>
+            <a class="phase-btn" href="2_pooling.html">2. Max Pooling</a>
+            <a class="phase-btn" href="3_neuron.html">3. Dense Neuron</a>
+            <a class="phase-btn active" href="4_relu.html">4. ReLU Activation</a>
+            <a class="phase-btn" href="5_softmax.html">5. Softmax Output</a>
+        </div>
+
+        <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width: 0%"></div></div>
+
+        <div class="visualization-area">
+            <h2 class="phase-title">ReLU Activation Function</h2>
+            <p class="phase-description">ReLU applies f(x) = max(0, x), zeroing out negative values.</p>
+            <div class="calculation-container">
+                <div class="matrix-section">
+                    <div class="matrix-label">Before ReLU</div>
+                    <div class="matrix" id="relu-input" style="grid-template-columns: repeat(3, 1fr);"></div>
+                </div>
+                <div class="matrix-section">
+                    <div class="activation-box"><div>ReLU</div><div class="formula">max(0, x)</div></div>
+                </div>
+                <div class="matrix-section">
+                    <div class="matrix-label">After ReLU</div>
+                    <div class="matrix" id="relu-output" style="grid-template-columns: repeat(3, 1fr);"></div>
+                </div>
+            </div>
+            <div class="calculation-display">
+                <div class="calc-title">ReLU Transformation</div>
+                <div class="calc-steps" id="relu-calc-steps"><div class="calc-step">Click "Run Simulation" to start...</div></div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-primary" id="runBtn" onclick="runSimulation()">▶ Run Simulation</button>
+            <button class="btn btn-secondary" onclick="resetSimulation()">↺ Reset</button>
+        </div>
+        <div class="speed-control">
+            <label>Speed:</label>
+            <input type="range" class="speed-slider" id="speedSlider" min="100" max="1500" value="600">
+            <span id="speedLabel">Medium</span>
+        </div>
+    </div>
+
+    <script>
+        const reluInput = [[2.5,-1.2,0.8],[-0.5,3.1,-2.4],[1.7,-0.3,4.2]];
+
+        let animationSpeed = 600, isRunning = false, currentStep = 0;
+
+        document.getElementById('speedSlider').addEventListener('input', (e) => {
+            animationSpeed = 1600 - parseInt(e.target.value);
+            const labels = ['Very Slow','Slow','Medium','Fast','Very Fast'];
+            document.getElementById('speedLabel').textContent = labels[Math.min(Math.floor((parseInt(e.target.value)-100)/350), 4)];
+        });
+
+        function initReLU() {
+            const inputEl = document.getElementById('relu-input');
+            const outputEl = document.getElementById('relu-output');
+            inputEl.innerHTML = ''; outputEl.innerHTML = '';
+            reluInput.forEach((row,i) => row.forEach((val,j) => {
+                const cell = document.createElement('div'); cell.className = 'matrix-cell input';
+                cell.textContent = val; cell.dataset.row = i; cell.dataset.col = j;
+                cell.style.background = val < 0 ? 'linear-gradient(135deg,#eb3349,#f45c43)' : 'linear-gradient(135deg,#667eea,#764ba2)';
+                inputEl.appendChild(cell);
+            }));
+            for(let i=0;i<9;i++) { const cell=document.createElement('div'); cell.className='matrix-cell output'; cell.textContent='?'; cell.style.opacity='0.5'; outputEl.appendChild(cell); }
+            document.getElementById('relu-calc-steps').innerHTML = '<div class="calc-step">Click "Run Simulation" to start...</div>';
+        }
+
+        async function runReLU() {
+            const inputCells = document.querySelectorAll('#relu-input .matrix-cell');
+            const outputCells = document.querySelectorAll('#relu-output .matrix-cell');
+            const calcSteps = document.getElementById('relu-calc-steps');
+            let idx = 0;
+            for(let i=0;i<3;i++) {
+                for(let j=0;j<3;j++) {
+                    if(!isRunning) return;
+                    inputCells.forEach(c => c.classList.remove('highlight'));
+                    inputCells[idx].classList.add('highlight');
+                    const inputVal = reluInput[i][j], outputVal = Math.max(0, inputVal);
+                    calcSteps.innerHTML = `<div class="calc-step">Input: <span class="highlight-num">${inputVal}</span></div><div class="calc-step active">max(0, ${inputVal}) = <span class="highlight-result">${outputVal}</span></div><div class="calc-step">${inputVal<0?'⚡ Zeroed!':'✓ Passed'}</div>`;
+                    outputCells[idx].textContent = outputVal; outputCells[idx].style.opacity = '1';
+                    outputCells[idx].style.background = outputVal===0 ? 'linear-gradient(135deg,#4a4a4a,#6a6a6a)' : 'linear-gradient(135deg,#11998e,#38ef7d)';
+                    document.getElementById('progressFill').style.width = `${(++currentStep/9)*100}%`;
+                    idx++;
+                    await sleep(animationSpeed);
+                }
+            }
+            inputCells.forEach(c => c.classList.remove('highlight'));
+            calcSteps.innerHTML += '<div class="calc-step active" style="color:#38ef7d;">✓ ReLU complete!</div>';
+        }
+
+        function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+        async function runSimulation() {
+            if(isRunning) return;
+            isRunning = true; currentStep = 0;
+            document.getElementById('runBtn').disabled = true;
+            initReLU();
+            await sleep(300);
+            await runReLU();
+            isRunning = false;
+            document.getElementById('runBtn').disabled = false;
+        }
+
+        function resetSimulation() {
+            isRunning = false; currentStep = 0;
+            document.getElementById('runBtn').disabled = false;
+            document.getElementById('progressFill').style.width = '0%';
+            initReLU();
+        }
+
+        initReLU();
+    </script>
+</body>
+</html>
