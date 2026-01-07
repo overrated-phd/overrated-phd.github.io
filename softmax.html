@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CNN Simulator - Softmax Output</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        h1 {
+            text-align: center; font-size: 2.2rem; margin-bottom: 8px;
+            background: linear-gradient(90deg, #00d9ff, #00ff88);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .subtitle { text-align: center; color: #8892b0; margin-bottom: 25px; }
+        .phase-nav { display: flex; justify-content: center; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; }
+        .phase-btn {
+            padding: 10px 20px; border: 2px solid rgba(100, 255, 218, 0.3);
+            background: rgba(255, 255, 255, 0.05); color: #8892b0;
+            border-radius: 25px; cursor: pointer; transition: all 0.3s ease;
+            font-size: 0.85rem; font-weight: 600; text-decoration: none;
+        }
+        .phase-btn:hover, .phase-btn.active {
+            background: rgba(100, 255, 218, 0.1); border-color: #64ffda; color: #64ffda;
+        }
+        .phase-btn.active { box-shadow: 0 0 20px rgba(100, 255, 218, 0.3); }
+        .visualization-area {
+            background: rgba(255, 255, 255, 0.03); border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1); padding: 30px; margin-bottom: 20px;
+        }
+        .phase-title { text-align: center; color: #64ffda; font-size: 1.4rem; margin-bottom: 20px; }
+        .phase-description { text-align: center; color: #8892b0; margin-bottom: 25px; line-height: 1.6; }
+        .calculation-display {
+            background: rgba(0, 0, 0, 0.4); border-radius: 15px; padding: 20px;
+            margin-top: 25px; border: 1px solid rgba(100, 255, 218, 0.2);
+        }
+        .calc-title { color: #64ffda; font-size: 1rem; margin-bottom: 15px; text-align: center; }
+        .calc-steps { font-family: 'Courier New', monospace; font-size: 0.9rem; line-height: 1.8; color: #ccd6f6; }
+        .calc-step { padding: 8px 15px; margin: 5px 0; border-radius: 8px; transition: all 0.3s ease; }
+        .calc-step.active { background: rgba(100, 255, 218, 0.1); border-left: 3px solid #64ffda; }
+        .calc-step .highlight-num { color: #64ffda; font-weight: bold; }
+        .calc-step .highlight-result { color: #38ef7d; font-weight: bold; }
+        .controls { display: flex; justify-content: center; gap: 15px; margin-top: 20px; flex-wrap: wrap; }
+        .btn {
+            padding: 12px 30px; border: none; border-radius: 25px;
+            font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease;
+        }
+        .btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+        .btn-secondary { background: transparent; color: #64ffda; border: 2px solid #64ffda; }
+        .btn:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .speed-control { display: flex; align-items: center; gap: 10px; justify-content: center; margin-top: 15px; }
+        .speed-control label { color: #8892b0; font-size: 0.85rem; }
+        .speed-slider { width: 150px; accent-color: #64ffda; }
+        .progress-bar { width: 100%; height: 6px; background: rgba(255, 255, 255, 0.1); border-radius: 3px; margin-bottom: 20px; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #64ffda, #00ff88); border-radius: 3px; transition: width 0.3s ease; }
+        .softmax-container { display: flex; align-items: center; justify-content: center; gap: 40px; flex-wrap: wrap; }
+        .logits-section, .probabilities-section { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+        .logit-row, .prob-row { display: flex; align-items: center; gap: 10px; }
+        .class-label { width: 60px; text-align: right; color: #8892b0; font-size: 0.85rem; }
+        .matrix-label { color: #64ffda; font-size: 0.9rem; font-weight: 600; }
+        .logit-value {
+            width: 60px; height: 40px; background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: bold;
+        }
+        .prob-bar-container { width: 150px; height: 30px; background: rgba(0, 0, 0, 0.3); border-radius: 15px; overflow: hidden; }
+        .prob-bar {
+            height: 100%; border-radius: 15px; transition: width 0.5s ease;
+            display: flex; align-items: center; justify-content: flex-end; padding-right: 10px;
+            font-size: 0.75rem; font-weight: bold;
+        }
+        .softmax-formula { background: rgba(0, 0, 0, 0.4); padding: 20px; border-radius: 15px; text-align: center; }
+        .softmax-formula .formula-text { font-family: 'Courier New', monospace; font-size: 1.1rem; color: #64ffda; }
+        @media (max-width: 768px) {
+            h1 { font-size: 1.6rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>CNN Calculation Simulator</h1>
+        <p class="subtitle">Step-by-step visualization of neural network computations</p>
+
+        <div class="phase-nav">
+            <a class="phase-btn" href="1_convolution.html">1. Convolution</a>
+            <a class="phase-btn" href="2_pooling.html">2. Max Pooling</a>
+            <a class="phase-btn" href="3_neuron.html">3. Dense Neuron</a>
+            <a class="phase-btn" href="4_relu.html">4. ReLU Activation</a>
+            <a class="phase-btn active" href="5_softmax.html">5. Softmax Output</a>
+        </div>
+
+        <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width: 0%"></div></div>
+
+        <div class="visualization-area">
+            <h2 class="phase-title">Softmax Output Layer</h2>
+            <p class="phase-description">Converts raw logits into probabilities that sum to 1.</p>
+            <div class="softmax-container">
+                <div class="logits-section">
+                    <div class="matrix-label">Raw Logits (z)</div>
+                    <div id="logits-display"></div>
+                </div>
+                <div class="softmax-formula"><div class="formula-text">σ(zᵢ) = eᶻⁱ / Σeᶻʲ</div></div>
+                <div class="probabilities-section">
+                    <div class="matrix-label">Probabilities</div>
+                    <div id="probs-display"></div>
+                </div>
+            </div>
+            <div class="calculation-display">
+                <div class="calc-title">Softmax Calculation</div>
+                <div class="calc-steps" id="softmax-calc-steps"><div class="calc-step">Click "Run Simulation" to start...</div></div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-primary" id="runBtn" onclick="runSimulation()">▶ Run Simulation</button>
+            <button class="btn btn-secondary" onclick="resetSimulation()">↺ Reset</button>
+        </div>
+        <div class="speed-control">
+            <label>Speed:</label>
+            <input type="range" class="speed-slider" id="speedSlider" min="100" max="1500" value="600">
+            <span id="speedLabel">Medium</span>
+        </div>
+    </div>
+
+    <script>
+        const softmaxLogits = [{class:'Cat',value:2.5},{class:'Dog',value:1.2},{class:'Bird',value:0.3}];
+
+        let animationSpeed = 600, isRunning = false, currentStep = 0;
+
+        document.getElementById('speedSlider').addEventListener('input', (e) => {
+            animationSpeed = 1600 - parseInt(e.target.value);
+            const labels = ['Very Slow','Slow','Medium','Fast','Very Fast'];
+            document.getElementById('speedLabel').textContent = labels[Math.min(Math.floor((parseInt(e.target.value)-100)/350), 4)];
+        });
+
+        function initSoftmax() {
+            const logitsEl = document.getElementById('logits-display');
+            const probsEl = document.getElementById('probs-display');
+            logitsEl.innerHTML = ''; probsEl.innerHTML = '';
+            const colors = ['linear-gradient(90deg,#00b09b,#96c93d)','linear-gradient(90deg,#fc4a1a,#f7b733)','linear-gradient(90deg,#667eea,#764ba2)'];
+            softmaxLogits.forEach((item,i) => {
+                logitsEl.innerHTML += `<div class="logit-row"><span class="class-label">${item.class}</span><div class="logit-value" id="logit-${i}">${item.value}</div></div>`;
+                probsEl.innerHTML += `<div class="prob-row"><div class="prob-bar-container"><div class="prob-bar" id="prob-bar-${i}" style="width:0%;background:${colors[i]};"></div></div><span id="prob-text-${i}" style="width:50px;font-size:0.85rem;">?</span></div>`;
+            });
+            document.getElementById('softmax-calc-steps').innerHTML = '<div class="calc-step">Click "Run Simulation" to start...</div>';
+        }
+
+        async function runSoftmax() {
+            const calcSteps = document.getElementById('softmax-calc-steps');
+            let calcHTML = '<div class="calc-step active">Step 1: Calculate e^z</div>';
+            const expValues = softmaxLogits.map(item => Math.exp(item.value));
+            softmaxLogits.forEach((item,i) => { calcHTML += `<div class="calc-step">e^${item.value} = <span class="highlight-result">${expValues[i].toFixed(4)}</span></div>`; });
+            calcSteps.innerHTML = calcHTML;
+            document.getElementById('progressFill').style.width = '33%';
+            await sleep(animationSpeed);
+            if(!isRunning) return;
+            const sumExp = expValues.reduce((a,b) => a+b, 0);
+            calcHTML += `<div class="calc-step active">Step 2: Sum = <span class="highlight-result">${sumExp.toFixed(4)}</span></div>`;
+            calcSteps.innerHTML = calcHTML;
+            document.getElementById('progressFill').style.width = '66%';
+            await sleep(animationSpeed);
+            if(!isRunning) return;
+            calcHTML += '<div class="calc-step active">Step 3: Divide each by sum</div>';
+            const probs = expValues.map(exp => exp/sumExp);
+            for(let i=0;i<probs.length;i++) {
+                const pct = (probs[i]*100).toFixed(1);
+                calcHTML += `<div class="calc-step">${softmaxLogits[i].class}: <span class="highlight-result">${pct}%</span></div>`;
+                calcSteps.innerHTML = calcHTML;
+                document.getElementById(`prob-bar-${i}`).style.width = `${pct}%`;
+                document.getElementById(`prob-text-${i}`).textContent = `${pct}%`;
+                await sleep(animationSpeed/2);
+            }
+            document.getElementById('progressFill').style.width = '100%';
+            const maxProb = Math.max(...probs);
+            const predicted = softmaxLogits[probs.indexOf(maxProb)].class;
+            calcHTML += `<div class="calc-step active" style="color:#38ef7d;">✓ Prediction: ${predicted} (${(maxProb*100).toFixed(1)}%)</div>`;
+            calcSteps.innerHTML = calcHTML;
+        }
+
+        function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+        async function runSimulation() {
+            if(isRunning) return;
+            isRunning = true; currentStep = 0;
+            document.getElementById('runBtn').disabled = true;
+            initSoftmax();
+            await sleep(300);
+            await runSoftmax();
+            isRunning = false;
+            document.getElementById('runBtn').disabled = false;
+        }
+
+        function resetSimulation() {
+            isRunning = false; currentStep = 0;
+            document.getElementById('runBtn').disabled = false;
+            document.getElementById('progressFill').style.width = '0%';
+            initSoftmax();
+        }
+
+        initSoftmax();
+    </script>
+</body>
+</html>
