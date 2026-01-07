@@ -3,629 +3,361 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D RGB Tensor Visualization</title>
+    <title>CNN Input: RGB Tensors</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: 'Segoe UI', system-ui, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             min-height: 100vh;
-            color: #fff;
-            overflow-x: hidden;
+            color: #e8e8e8;
+            padding: 40px 20px;
         }
-        
+
         .container {
-            max-width: 1200px;
+            max-width: 1000px;
             margin: 0 auto;
-            padding: 20px;
         }
-        
+
         header {
             text-align: center;
-            padding: 30px 0;
+            margin-bottom: 40px;
         }
-        
+
         h1 {
-            font-size: 2.5rem;
-            background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1);
+            font-size: 2.2rem;
+            background: linear-gradient(90deg, #00d9ff, #00ff88);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
             margin-bottom: 10px;
         }
-        
+
         .subtitle {
-            color: #94a3b8;
-            font-size: 1.1rem;
+            color: #888;
         }
-        
-        .main-content {
-            display: grid;
-            grid-template-columns: 1fr 320px;
-            gap: 24px;
-            margin-top: 20px;
-        }
-        
-        .canvas-container {
+
+        .main-section {
             background: rgba(255, 255, 255, 0.05);
-            border-radius: 16px;
+            border-radius: 20px;
+            padding: 40px;
             border: 1px solid rgba(255, 255, 255, 0.1);
-            overflow: hidden;
-            position: relative;
-            min-height: 500px;
         }
-        
-        #tensorCanvas {
-            width: 100%;
-            height: 500px;
-            display: block;
+
+        .tensor-shape {
+            text-align: center;
+            margin-bottom: 30px;
+            font-family: 'Courier New', monospace;
+            font-size: 1.3rem;
+            color: #feca57;
         }
-        
-        .controls-panel {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 24px;
-        }
-        
-        .control-group {
-            margin-bottom: 24px;
-        }
-        
-        .control-group h3 {
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #94a3b8;
-            margin-bottom: 12px;
-        }
-        
-        .slider-control {
-            margin-bottom: 16px;
-        }
-        
-        .slider-label {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 6px;
-            font-size: 0.9rem;
-        }
-        
-        .slider-value {
-            color: #4ecdc4;
-            font-weight: 600;
-        }
-        
-        input[type="range"] {
-            width: 100%;
-            height: 6px;
-            border-radius: 3px;
-            background: rgba(255, 255, 255, 0.1);
-            outline: none;
-            -webkit-appearance: none;
-        }
-        
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #4ecdc4, #45b7d1);
-            cursor: pointer;
-            box-shadow: 0 2px 8px rgba(78, 205, 196, 0.4);
-        }
-        
-        .channel-toggles {
-            display: flex;
-            gap: 10px;
-        }
-        
-        .channel-btn {
-            flex: 1;
-            padding: 12px 8px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 0.9rem;
-            transition: all 0.3s ease;
-        }
-        
-        .channel-btn.red {
-            background: rgba(255, 107, 107, 0.2);
-            color: #ff6b6b;
-            border: 2px solid #ff6b6b;
-        }
-        
-        .channel-btn.green {
-            background: rgba(78, 205, 196, 0.2);
-            color: #4ecdc4;
-            border: 2px solid #4ecdc4;
-        }
-        
-        .channel-btn.blue {
-            background: rgba(69, 183, 209, 0.2);
-            color: #45b7d1;
-            border: 2px solid #45b7d1;
-        }
-        
-        .channel-btn.active {
-            transform: scale(1.05);
-        }
-        
-        .channel-btn.red.active { background: rgba(255, 107, 107, 0.5); }
-        .channel-btn.green.active { background: rgba(78, 205, 196, 0.5); }
-        .channel-btn.blue.active { background: rgba(69, 183, 209, 0.5); }
-        
-        .channel-btn:not(.active) {
-            opacity: 0.4;
-        }
-        
-        .view-btns {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-        }
-        
-        .view-btn {
-            padding: 10px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 8px;
-            color: #fff;
-            cursor: pointer;
-            font-size: 0.85rem;
-            transition: all 0.3s ease;
-        }
-        
-        .view-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-        
-        .view-btn.active {
-            background: linear-gradient(135deg, #4ecdc4, #45b7d1);
-            border-color: transparent;
-        }
-        
-        .info-card {
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 12px;
-            padding: 16px;
-            margin-top: 16px;
-        }
-        
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .info-row:last-child {
-            border-bottom: none;
-        }
-        
-        .info-label {
-            color: #94a3b8;
-            font-size: 0.85rem;
-        }
-        
-        .info-value {
-            font-weight: 600;
-            font-size: 0.9rem;
-        }
-        
-        .legend {
-            display: flex;
-            justify-content: center;
-            gap: 24px;
-            margin-top: 20px;
-            padding: 16px;
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 12px;
-        }
-        
-        .legend-item {
+
+        .visualization {
             display: flex;
             align-items: center;
-            gap: 8px;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .image-box {
+            text-align: center;
+        }
+
+        .image-box h3 {
+            margin-bottom: 15px;
+            font-size: 1rem;
+            color: #aaa;
+        }
+
+        .image-container {
+            width: 150px;
+            height: 150px;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            background: rgba(0,0,0,0.3);
+            cursor: pointer;
+        }
+
+        #originalImage {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: none;
+        }
+
+        .placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 0.85rem;
+            text-align: center;
+            padding: 10px;
+        }
+
+        .arrow {
+            font-size: 2rem;
+            color: #00ff88;
+        }
+
+        .channels {
+            display: flex;
+            gap: 15px;
+        }
+
+        .channel {
+            text-align: center;
+        }
+
+        .channel-label {
+            font-weight: bold;
+            margin-bottom: 8px;
             font-size: 0.9rem;
         }
-        
-        .legend-color {
-            width: 16px;
-            height: 16px;
+
+        .channel-label.red { color: #ff6b6b; }
+        .channel-label.green { color: #51cf66; }
+        .channel-label.blue { color: #339af0; }
+
+        .channel canvas {
+            width: 120px;
+            height: 120px;
+            border-radius: 8px;
+        }
+
+        .channel canvas.red { border: 2px solid #ff6b6b; }
+        .channel canvas.green { border: 2px solid #51cf66; }
+        .channel canvas.blue { border: 2px solid #339af0; }
+
+        .channel .dim {
+            margin-top: 8px;
+            font-size: 0.75rem;
+            color: #888;
+            font-family: 'Courier New', monospace;
+        }
+
+        .samples {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .sample-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .sample-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .info-box {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(0, 217, 255, 0.1);
+            border-radius: 10px;
+            border-left: 3px solid #00d9ff;
+        }
+
+        .info-box p {
+            color: #ccc;
+            line-height: 1.7;
+            font-size: 0.95rem;
+        }
+
+        .info-box code {
+            color: #00ff88;
+            background: rgba(0,0,0,0.3);
+            padding: 2px 6px;
             border-radius: 4px;
         }
-        
-        .instructions {
-            text-align: center;
-            color: #64748b;
-            font-size: 0.85rem;
-            margin-top: 12px;
-        }
-        
-        @media (max-width: 900px) {
-            .main-content {
-                grid-template-columns: 1fr;
-            }
+
+        #fileInput { display: none; }
+
+        @media (max-width: 700px) {
+            .visualization { flex-direction: column; }
+            .arrow { transform: rotate(90deg); }
+            .channels { flex-wrap: wrap; justify-content: center; }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>3D RGB Tensor Visualization</h1>
-            <p class="subtitle">Interactive visualization of image data as a 3-channel tensor (Height × Width × Channels)</p>
+            <h1>CNN Input: RGB Tensors</h1>
+            <p class="subtitle">How images become 3D tensors for neural networks</p>
         </header>
-        
-        <div class="main-content">
-            <div class="canvas-container">
-                <canvas id="tensorCanvas"></canvas>
-                <p class="instructions">🖱️ Drag to rotate • Scroll to zoom • Right-click drag to pan</p>
+
+        <div class="main-section">
+            <div class="tensor-shape">Input Shape: [3 × H × W]</div>
+
+            <div class="visualization">
+                <div class="image-box">
+                    <h3>Original Image</h3>
+                    <div class="image-container" onclick="document.getElementById('fileInput').click()">
+                        <img id="originalImage" alt="Original">
+                        <div class="placeholder" id="placeholder">Click to upload<br>or use samples</div>
+                    </div>
+                    <input type="file" id="fileInput" accept="image/*" onchange="handleUpload(event)">
+                </div>
+
+                <div class="arrow">→</div>
+
+                <div class="channels">
+                    <div class="channel">
+                        <div class="channel-label red">Red Channel</div>
+                        <canvas id="redCanvas" class="red" width="120" height="120"></canvas>
+                        <div class="dim">[H × W]</div>
+                    </div>
+                    <div class="channel">
+                        <div class="channel-label green">Green Channel</div>
+                        <canvas id="greenCanvas" class="green" width="120" height="120"></canvas>
+                        <div class="dim">[H × W]</div>
+                    </div>
+                    <div class="channel">
+                        <div class="channel-label blue">Blue Channel</div>
+                        <canvas id="blueCanvas" class="blue" width="120" height="120"></canvas>
+                        <div class="dim">[H × W]</div>
+                    </div>
+                </div>
             </div>
-            
-            <div class="controls-panel">
-                <div class="control-group">
-                    <h3>Tensor Dimensions</h3>
-                    <div class="slider-control">
-                        <div class="slider-label">
-                            <span>Height (H)</span>
-                            <span class="slider-value" id="heightValue">8</span>
-                        </div>
-                        <input type="range" id="heightSlider" min="4" max="16" value="8">
-                    </div>
-                    <div class="slider-control">
-                        <div class="slider-label">
-                            <span>Width (W)</span>
-                            <span class="slider-value" id="widthValue">8</span>
-                        </div>
-                        <input type="range" id="widthSlider" min="4" max="16" value="8">
-                    </div>
-                </div>
-                
-                <div class="control-group">
-                    <h3>Channel Visibility</h3>
-                    <div class="channel-toggles">
-                        <button class="channel-btn red active" data-channel="r">R</button>
-                        <button class="channel-btn green active" data-channel="g">G</button>
-                        <button class="channel-btn blue active" data-channel="b">B</button>
-                    </div>
-                </div>
-                
-                <div class="control-group">
-                    <h3>Display Options</h3>
-                    <div class="slider-control">
-                        <div class="slider-label">
-                            <span>Cell Spacing</span>
-                            <span class="slider-value" id="spacingValue">0.2</span>
-                        </div>
-                        <input type="range" id="spacingSlider" min="0" max="50" value="20">
-                    </div>
-                    <div class="slider-control">
-                        <div class="slider-label">
-                            <span>Channel Gap</span>
-                            <span class="slider-value" id="gapValue">2.0</span>
-                        </div>
-                        <input type="range" id="gapSlider" min="10" max="50" value="20">
-                    </div>
-                </div>
-                
-                <div class="control-group">
-                    <h3>View Presets</h3>
-                    <div class="view-btns">
-                        <button class="view-btn active" data-view="perspective">3D View</button>
-                        <button class="view-btn" data-view="front">Front</button>
-                        <button class="view-btn" data-view="top">Top</button>
-                        <button class="view-btn" data-view="side">Side</button>
-                    </div>
-                </div>
-                
-                <div class="info-card">
-                    <div class="info-row">
-                        <span class="info-label">Tensor Shape</span>
-                        <span class="info-value" id="tensorShape">8 × 8 × 3</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Total Elements</span>
-                        <span class="info-value" id="totalElements">192</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Data Type</span>
-                        <span class="info-value">uint8 [0-255]</span>
-                    </div>
-                </div>
-                
-                <div class="legend">
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: #ff6b6b;"></div>
-                        <span>Red Channel</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: #4ecdc4;"></div>
-                        <span>Green Channel</span>
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-color" style="background: #45b7d1;"></div>
-                        <span>Blue Channel</span>
-                    </div>
-                </div>
+
+            <div class="samples">
+                <button class="sample-btn" onclick="loadSample('gradient')">🌈 Gradient</button>
+                <button class="sample-btn" onclick="loadSample('colors')">🎨 Colors</button>
+                <button class="sample-btn" onclick="loadSample('scene')">🏞️ Scene</button>
+            </div>
+
+            <div class="info-box">
+                <p>
+                    <strong>CNN Input Format:</strong> Images are represented as 3D tensors with shape <code>[C × H × W]</code> where C=3 for RGB. Each channel is a 2D matrix containing pixel intensities (0-255). The convolution layers process all three channels simultaneously to extract features.
+                </p>
             </div>
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
-        // Scene setup
-        const canvas = document.getElementById('tensorCanvas');
-        const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(50, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-        
-        renderer.setSize(canvas.clientWidth, canvas.clientHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
-        renderer.setClearColor(0x000000, 0);
-        
-        // Lighting
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-        scene.add(ambientLight);
-        
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        directionalLight.position.set(10, 20, 15);
-        scene.add(directionalLight);
-        
-        const backLight = new THREE.DirectionalLight(0xffffff, 0.3);
-        backLight.position.set(-10, -10, -10);
-        scene.add(backLight);
-        
-        // State
-        let tensorGroup = new THREE.Group();
-        scene.add(tensorGroup);
-        
-        let config = {
-            height: 8,
-            width: 8,
-            spacing: 0.2,
-            channelGap: 2.0,
-            channels: { r: true, g: true, b: true }
-        };
-        
-        // Generate random tensor data
-        function generateTensorData(h, w) {
-            const data = {
-                r: [], g: [], b: []
-            };
-            
-            for (let i = 0; i < h; i++) {
-                data.r[i] = [];
-                data.g[i] = [];
-                data.b[i] = [];
-                for (let j = 0; j < w; j++) {
-                    // Create gradient-like patterns for visual interest
-                    data.r[i][j] = Math.floor((i / h) * 200 + Math.random() * 55);
-                    data.g[i][j] = Math.floor((j / w) * 200 + Math.random() * 55);
-                    data.b[i][j] = Math.floor(((i + j) / (h + w)) * 200 + Math.random() * 55);
-                }
+        const SIZE = 120;
+
+        function handleUpload(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (ev) => loadImage(ev.target.result);
+                reader.readAsDataURL(file);
             }
-            return data;
         }
-        
-        let tensorData = generateTensorData(config.height, config.width);
-        
-        // Build tensor visualization
-        function buildTensor() {
-            // Clear existing
-            while (tensorGroup.children.length > 0) {
-                const child = tensorGroup.children[0];
-                if (child.geometry) child.geometry.dispose();
-                if (child.material) child.material.dispose();
-                tensorGroup.remove(child);
-            }
-            
-            const cellSize = 1;
-            const channels = ['r', 'g', 'b'];
-            const channelColors = {
-                r: new THREE.Color(0xff6b6b),
-                g: new THREE.Color(0x4ecdc4),
-                b: new THREE.Color(0x45b7d1)
+
+        function loadImage(src) {
+            const img = new Image();
+            img.onload = () => {
+                document.getElementById('originalImage').src = src;
+                document.getElementById('originalImage').style.display = 'block';
+                document.getElementById('placeholder').style.display = 'none';
+                processChannels(img);
             };
-            
-            const totalWidth = config.width * (cellSize + config.spacing);
-            const totalHeight = config.height * (cellSize + config.spacing);
-            
-            channels.forEach((channel, channelIndex) => {
-                if (!config.channels[channel]) return;
-                
-                const channelGroup = new THREE.Group();
-                const zOffset = channelIndex * config.channelGap;
-                
-                for (let i = 0; i < config.height; i++) {
-                    for (let j = 0; j < config.width; j++) {
-                        const value = tensorData[channel][i] ? tensorData[channel][i][j] || 0 : 0;
-                        const normalizedValue = value / 255;
-                        
-                        // Create cube
-                        const geometry = new THREE.BoxGeometry(cellSize * 0.9, cellSize * 0.9, cellSize * 0.5);
-                        
-                        // Color based on value intensity
-                        const baseColor = channelColors[channel].clone();
-                        const material = new THREE.MeshPhongMaterial({
-                            color: baseColor,
-                            transparent: true,
-                            opacity: 0.3 + normalizedValue * 0.7,
-                            emissive: baseColor.clone().multiplyScalar(normalizedValue * 0.3)
-                        });
-                        
-                        const cube = new THREE.Mesh(geometry, material);
-                        cube.position.set(
-                            j * (cellSize + config.spacing) - totalWidth / 2 + cellSize / 2,
-                            -i * (cellSize + config.spacing) + totalHeight / 2 - cellSize / 2,
-                            zOffset
-                        );
-                        
-                        channelGroup.add(cube);
+            img.src = src;
+        }
+
+        function processChannels(img) {
+            const temp = document.createElement('canvas');
+            temp.width = temp.height = SIZE;
+            const ctx = temp.getContext('2d');
+            ctx.drawImage(img, 0, 0, SIZE, SIZE);
+            const data = ctx.getImageData(0, 0, SIZE, SIZE);
+
+            const rCtx = document.getElementById('redCanvas').getContext('2d');
+            const gCtx = document.getElementById('greenCanvas').getContext('2d');
+            const bCtx = document.getElementById('blueCanvas').getContext('2d');
+
+            const rData = rCtx.createImageData(SIZE, SIZE);
+            const gData = gCtx.createImageData(SIZE, SIZE);
+            const bData = bCtx.createImageData(SIZE, SIZE);
+
+            for (let i = 0; i < data.data.length; i += 4) {
+                // Red channel
+                rData.data[i] = data.data[i];
+                rData.data[i+1] = 0;
+                rData.data[i+2] = 0;
+                rData.data[i+3] = 255;
+
+                // Green channel
+                gData.data[i] = 0;
+                gData.data[i+1] = data.data[i+1];
+                gData.data[i+2] = 0;
+                gData.data[i+3] = 255;
+
+                // Blue channel
+                bData.data[i] = 0;
+                bData.data[i+1] = 0;
+                bData.data[i+2] = data.data[i+2];
+                bData.data[i+3] = 255;
+            }
+
+            rCtx.putImageData(rData, 0, 0);
+            gCtx.putImageData(gData, 0, 0);
+            bCtx.putImageData(bData, 0, 0);
+        }
+
+        function loadSample(type) {
+            const canvas = document.createElement('canvas');
+            canvas.width = canvas.height = SIZE;
+            const ctx = canvas.getContext('2d');
+
+            if (type === 'gradient') {
+                for (let y = 0; y < SIZE; y++) {
+                    for (let x = 0; x < SIZE; x++) {
+                        ctx.fillStyle = `rgb(${x*2}, ${y*2}, ${(SIZE-x)*2})`;
+                        ctx.fillRect(x, y, 1, 1);
                     }
                 }
-                
-                // Add channel label
-                tensorGroup.add(channelGroup);
-            });
-            
-            // Update info
-            document.getElementById('tensorShape').textContent = `${config.height} × ${config.width} × 3`;
-            document.getElementById('totalElements').textContent = (config.height * config.width * 3).toLocaleString();
-        }
-        
-        // Camera controls (simple orbit)
-        let isDragging = false;
-        let isPanning = false;
-        let previousMousePosition = { x: 0, y: 0 };
-        let rotation = { x: 0.3, y: -0.5 };
-        let zoom = 20;
-        let panOffset = { x: 0, y: 0 };
-        
-        function updateCamera() {
-            const radius = zoom;
-            camera.position.x = radius * Math.sin(rotation.y) * Math.cos(rotation.x) + panOffset.x;
-            camera.position.y = radius * Math.sin(rotation.x) + panOffset.y;
-            camera.position.z = radius * Math.cos(rotation.y) * Math.cos(rotation.x);
-            camera.lookAt(panOffset.x, panOffset.y, 0);
-        }
-        
-        canvas.addEventListener('mousedown', (e) => {
-            if (e.button === 2) {
-                isPanning = true;
-            } else {
-                isDragging = true;
-            }
-            previousMousePosition = { x: e.clientX, y: e.clientY };
-        });
-        
-        canvas.addEventListener('mousemove', (e) => {
-            const deltaX = e.clientX - previousMousePosition.x;
-            const deltaY = e.clientY - previousMousePosition.y;
-            
-            if (isDragging) {
-                rotation.y += deltaX * 0.01;
-                rotation.x += deltaY * 0.01;
-                rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, rotation.x));
-                updateCamera();
-            }
-            
-            if (isPanning) {
-                panOffset.x -= deltaX * 0.02;
-                panOffset.y += deltaY * 0.02;
-                updateCamera();
-            }
-            
-            previousMousePosition = { x: e.clientX, y: e.clientY };
-        });
-        
-        canvas.addEventListener('mouseup', () => {
-            isDragging = false;
-            isPanning = false;
-        });
-        
-        canvas.addEventListener('mouseleave', () => {
-            isDragging = false;
-            isPanning = false;
-        });
-        
-        canvas.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            zoom += e.deltaY * 0.02;
-            zoom = Math.max(10, Math.min(50, zoom));
-            updateCamera();
-        });
-        
-        canvas.addEventListener('contextmenu', (e) => e.preventDefault());
-        
-        // Controls
-        document.getElementById('heightSlider').addEventListener('input', (e) => {
-            config.height = parseInt(e.target.value);
-            document.getElementById('heightValue').textContent = config.height;
-            tensorData = generateTensorData(config.height, config.width);
-            buildTensor();
-        });
-        
-        document.getElementById('widthSlider').addEventListener('input', (e) => {
-            config.width = parseInt(e.target.value);
-            document.getElementById('widthValue').textContent = config.width;
-            tensorData = generateTensorData(config.height, config.width);
-            buildTensor();
-        });
-        
-        document.getElementById('spacingSlider').addEventListener('input', (e) => {
-            config.spacing = parseInt(e.target.value) / 100;
-            document.getElementById('spacingValue').textContent = config.spacing.toFixed(2);
-            buildTensor();
-        });
-        
-        document.getElementById('gapSlider').addEventListener('input', (e) => {
-            config.channelGap = parseInt(e.target.value) / 10;
-            document.getElementById('gapValue').textContent = config.channelGap.toFixed(1);
-            buildTensor();
-        });
-        
-        document.querySelectorAll('.channel-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const channel = btn.dataset.channel;
-                config.channels[channel] = !config.channels[channel];
-                btn.classList.toggle('active');
-                buildTensor();
-            });
-        });
-        
-        document.querySelectorAll('.view-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                
-                panOffset = { x: 0, y: 0 };
-                
-                switch (btn.dataset.view) {
-                    case 'front':
-                        rotation = { x: 0, y: 0 };
-                        break;
-                    case 'top':
-                        rotation = { x: Math.PI / 2, y: 0 };
-                        break;
-                    case 'side':
-                        rotation = { x: 0, y: Math.PI / 2 };
-                        break;
-                    case 'perspective':
-                    default:
-                        rotation = { x: 0.3, y: -0.5 };
-                        break;
+            } else if (type === 'colors') {
+                const c = [['#ff6b6b','#feca57','#48dbfb'],['#ff9ff3','#54a0ff','#5f27cd'],['#00d2d3','#1dd1a1','#fdcb6e']];
+                const s = SIZE/3;
+                for (let r = 0; r < 3; r++) {
+                    for (let col = 0; col < 3; col++) {
+                        ctx.fillStyle = c[r][col];
+                        ctx.fillRect(col*s, r*s, s, s);
+                    }
                 }
-                updateCamera();
-            });
-        });
-        
-        // Resize handler
-        window.addEventListener('resize', () => {
-            const width = canvas.clientWidth;
-            const height = canvas.clientHeight;
-            camera.aspect = width / height;
-            camera.updateProjectionMatrix();
-            renderer.setSize(width, height);
-        });
-        
-        // Animation loop
-        function animate() {
-            requestAnimationFrame(animate);
-            renderer.render(scene, camera);
+            } else if (type === 'scene') {
+                const grad = ctx.createLinearGradient(0, 0, 0, SIZE);
+                grad.addColorStop(0, '#74b9ff');
+                grad.addColorStop(0.6, '#a29bfe');
+                grad.addColorStop(1, '#2d3436');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, SIZE, SIZE);
+                ctx.beginPath();
+                ctx.arc(SIZE*0.75, SIZE*0.25, 15, 0, Math.PI*2);
+                ctx.fillStyle = '#ffeaa7';
+                ctx.fill();
+            }
+
+            loadImage(canvas.toDataURL());
         }
-        
-        // Initialize
-        buildTensor();
-        updateCamera();
-        animate();
+
+        // Init empty canvases
+        ['redCanvas','greenCanvas','blueCanvas'].forEach(id => {
+            const ctx = document.getElementById(id).getContext('2d');
+            ctx.fillStyle = 'rgba(0,0,0,0.4)';
+            ctx.fillRect(0, 0, SIZE, SIZE);
+        });
     </script>
 </body>
 </html>
