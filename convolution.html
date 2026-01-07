@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CNN Simulator - Convolution</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #fff;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        h1 {
+            text-align: center; font-size: 2.2rem; margin-bottom: 8px;
+            background: linear-gradient(90deg, #00d9ff, #00ff88);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .subtitle { text-align: center; color: #8892b0; margin-bottom: 25px; }
+        .phase-nav { display: flex; justify-content: center; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; }
+        .phase-btn {
+            padding: 10px 20px; border: 2px solid rgba(100, 255, 218, 0.3);
+            background: rgba(255, 255, 255, 0.05); color: #8892b0;
+            border-radius: 25px; cursor: pointer; transition: all 0.3s ease;
+            font-size: 0.85rem; font-weight: 600; text-decoration: none;
+        }
+        .phase-btn:hover, .phase-btn.active {
+            background: rgba(100, 255, 218, 0.1); border-color: #64ffda; color: #64ffda;
+        }
+        .phase-btn.active { box-shadow: 0 0 20px rgba(100, 255, 218, 0.3); }
+        .visualization-area {
+            background: rgba(255, 255, 255, 0.03); border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1); padding: 30px; margin-bottom: 20px;
+        }
+        .phase-title { text-align: center; color: #64ffda; font-size: 1.4rem; margin-bottom: 20px; }
+        .phase-description { text-align: center; color: #8892b0; margin-bottom: 25px; line-height: 1.6; }
+        .calculation-container { display: flex; align-items: center; justify-content: center; gap: 30px; flex-wrap: wrap; }
+        .matrix-section { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        .matrix-label { color: #64ffda; font-size: 0.9rem; font-weight: 600; }
+        .matrix {
+            display: grid; gap: 3px; padding: 10px; background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px; border: 2px solid rgba(100, 255, 218, 0.2);
+        }
+        .matrix-cell {
+            width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+            font-size: 0.75rem; font-weight: bold; border-radius: 5px; transition: all 0.3s ease;
+        }
+        .matrix-cell.input { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .matrix-cell.kernel { background: linear-gradient(135deg, #f093fb, #f5576c); }
+        .matrix-cell.output { background: linear-gradient(135deg, #11998e, #38ef7d); }
+        .matrix-cell.highlight { transform: scale(1.15); box-shadow: 0 0 15px rgba(255, 255, 255, 0.5); z-index: 10; }
+        .operator { font-size: 2rem; color: #64ffda; }
+        .calculation-display {
+            background: rgba(0, 0, 0, 0.4); border-radius: 15px; padding: 20px;
+            margin-top: 25px; border: 1px solid rgba(100, 255, 218, 0.2);
+        }
+        .calc-title { color: #64ffda; font-size: 1rem; margin-bottom: 15px; text-align: center; }
+        .calc-steps { font-family: 'Courier New', monospace; font-size: 0.9rem; line-height: 1.8; color: #ccd6f6; }
+        .calc-step { padding: 8px 15px; margin: 5px 0; border-radius: 8px; transition: all 0.3s ease; }
+        .calc-step.active { background: rgba(100, 255, 218, 0.1); border-left: 3px solid #64ffda; }
+        .calc-step .highlight-num { color: #64ffda; font-weight: bold; }
+        .calc-step .highlight-op { color: #f093fb; }
+        .calc-step .highlight-result { color: #38ef7d; font-weight: bold; }
+        .controls { display: flex; justify-content: center; gap: 15px; margin-top: 20px; flex-wrap: wrap; }
+        .btn {
+            padding: 12px 30px; border: none; border-radius: 25px;
+            font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease;
+        }
+        .btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+        .btn-secondary { background: transparent; color: #64ffda; border: 2px solid #64ffda; }
+        .btn:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .speed-control { display: flex; align-items: center; gap: 10px; justify-content: center; margin-top: 15px; }
+        .speed-control label { color: #8892b0; font-size: 0.85rem; }
+        .speed-slider { width: 150px; accent-color: #64ffda; }
+        .progress-bar { width: 100%; height: 6px; background: rgba(255, 255, 255, 0.1); border-radius: 3px; margin-bottom: 20px; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #64ffda, #00ff88); border-radius: 3px; transition: width 0.3s ease; }
+        @media (max-width: 768px) {
+            h1 { font-size: 1.6rem; }
+            .matrix-cell { width: 32px; height: 32px; font-size: 0.65rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>CNN Calculation Simulator</h1>
+        <p class="subtitle">Step-by-step visualization of neural network computations</p>
+
+        <div class="phase-nav">
+            <a class="phase-btn active" href="1_convolution.html">1. Convolution</a>
+            <a class="phase-btn" href="2_pooling.html">2. Max Pooling</a>
+            <a class="phase-btn" href="3_neuron.html">3. Dense Neuron</a>
+            <a class="phase-btn" href="4_relu.html">4. ReLU Activation</a>
+            <a class="phase-btn" href="5_softmax.html">5. Softmax Output</a>
+        </div>
+
+        <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width: 0%"></div></div>
+
+        <div class="visualization-area">
+            <h2 class="phase-title">Convolution Operation</h2>
+            <p class="phase-description">A kernel slides over input, computing element-wise multiplication and summing to produce feature maps.</p>
+            <div class="calculation-container">
+                <div class="matrix-section">
+                    <div class="matrix-label">Input (5×5)</div>
+                    <div class="matrix" id="conv-input" style="grid-template-columns: repeat(5, 1fr);"></div>
+                </div>
+                <span class="operator">*</span>
+                <div class="matrix-section">
+                    <div class="matrix-label">Kernel (3×3)</div>
+                    <div class="matrix" id="conv-kernel" style="grid-template-columns: repeat(3, 1fr);"></div>
+                </div>
+                <span class="operator">=</span>
+                <div class="matrix-section">
+                    <div class="matrix-label">Output (3×3)</div>
+                    <div class="matrix" id="conv-output" style="grid-template-columns: repeat(3, 1fr);"></div>
+                </div>
+            </div>
+            <div class="calculation-display">
+                <div class="calc-title">Current Calculation</div>
+                <div class="calc-steps" id="conv-calc-steps"><div class="calc-step">Click "Run Simulation" to start...</div></div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-primary" id="runBtn" onclick="runSimulation()">▶ Run Simulation</button>
+            <button class="btn btn-secondary" onclick="resetSimulation()">↺ Reset</button>
+        </div>
+        <div class="speed-control">
+            <label>Speed:</label>
+            <input type="range" class="speed-slider" id="speedSlider" min="100" max="1500" value="600">
+            <span id="speedLabel">Medium</span>
+        </div>
+    </div>
+
+    <script>
+        const convInput = [[1,2,0,1,2],[0,1,3,2,1],[2,3,1,0,2],[1,0,2,3,1],[2,1,0,1,3]];
+        const convKernel = [[1,0,-1],[1,0,-1],[1,0,-1]];
+
+        let animationSpeed = 600, isRunning = false, currentStep = 0;
+
+        document.getElementById('speedSlider').addEventListener('input', (e) => {
+            animationSpeed = 1600 - parseInt(e.target.value);
+            const labels = ['Very Slow','Slow','Medium','Fast','Very Fast'];
+            document.getElementById('speedLabel').textContent = labels[Math.min(Math.floor((parseInt(e.target.value)-100)/350), 4)];
+        });
+
+        function initConvolution() {
+            const inputEl = document.getElementById('conv-input');
+            const kernelEl = document.getElementById('conv-kernel');
+            const outputEl = document.getElementById('conv-output');
+            inputEl.innerHTML = ''; kernelEl.innerHTML = ''; outputEl.innerHTML = '';
+            convInput.forEach((row,i) => row.forEach((val,j) => {
+                const cell = document.createElement('div');
+                cell.className = 'matrix-cell input'; cell.textContent = val;
+                cell.dataset.row = i; cell.dataset.col = j; inputEl.appendChild(cell);
+            }));
+            convKernel.forEach(row => row.forEach(val => {
+                const cell = document.createElement('div');
+                cell.className = 'matrix-cell kernel'; cell.textContent = val; kernelEl.appendChild(cell);
+            }));
+            for(let i=0;i<9;i++) { const cell=document.createElement('div'); cell.className='matrix-cell output'; cell.textContent='?'; cell.style.opacity='0.5'; outputEl.appendChild(cell); }
+            document.getElementById('conv-calc-steps').innerHTML = '<div class="calc-step">Click "Run Simulation" to start...</div>';
+        }
+
+        async function runConvolution() {
+            const inputCells = document.querySelectorAll('#conv-input .matrix-cell');
+            const kernelCells = document.querySelectorAll('#conv-kernel .matrix-cell');
+            const outputCells = document.querySelectorAll('#conv-output .matrix-cell');
+            const calcSteps = document.getElementById('conv-calc-steps');
+            let outputIdx = 0;
+            for(let outRow=0;outRow<3;outRow++) {
+                for(let outCol=0;outCol<3;outCol++) {
+                    if(!isRunning) return;
+                    inputCells.forEach(c => c.classList.remove('highlight'));
+                    kernelCells.forEach(c => c.classList.add('highlight'));
+                    let sum = 0, products = [];
+                    for(let ki=0;ki<3;ki++) {
+                        for(let kj=0;kj<3;kj++) {
+                            const inRow=outRow+ki, inCol=outCol+kj;
+                            const inputCell = document.querySelector(`#conv-input .matrix-cell[data-row="${inRow}"][data-col="${inCol}"]`);
+                            if(inputCell) inputCell.classList.add('highlight');
+                            const inputVal=convInput[inRow][inCol], kernelVal=convKernel[ki][kj], product=inputVal*kernelVal;
+                            sum += product;
+                            products.push(`<span class="highlight-num">${inputVal}</span>×<span class="highlight-num">${kernelVal}</span>=<span class="highlight-result">${product}</span>`);
+                        }
+                    }
+                    calcSteps.innerHTML = `<div class="calc-step active">Position (${outRow},${outCol}):</div><div class="calc-step">${products.join(' + ')}</div><div class="calc-step active">Sum = <span class="highlight-result">${sum}</span></div>`;
+                    outputCells[outputIdx].textContent = sum; outputCells[outputIdx].style.opacity = '1'; outputIdx++;
+                    document.getElementById('progressFill').style.width = `${(++currentStep/9)*100}%`;
+                    await sleep(animationSpeed);
+                }
+            }
+            inputCells.forEach(c => c.classList.remove('highlight')); kernelCells.forEach(c => c.classList.remove('highlight'));
+            calcSteps.innerHTML += '<div class="calc-step active" style="color:#38ef7d;">✓ Convolution complete!</div>';
+        }
+
+        function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+        async function runSimulation() {
+            if(isRunning) return;
+            isRunning = true; currentStep = 0;
+            document.getElementById('runBtn').disabled = true;
+            initConvolution();
+            await sleep(300);
+            await runConvolution();
+            isRunning = false;
+            document.getElementById('runBtn').disabled = false;
+        }
+
+        function resetSimulation() {
+            isRunning = false; currentStep = 0;
+            document.getElementById('runBtn').disabled = false;
+            document.getElementById('progressFill').style.width = '0%';
+            initConvolution();
+        }
+
+        initConvolution();
+    </script>
+</body>
+</html>
