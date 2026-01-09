@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fully Connected Layers in CNNs</title>
+    <title>Flatten & Fully Connected Layers in CNNs</title>
     <style>
         * {
             margin: 0;
@@ -303,7 +303,7 @@
             <h2>CNN Architecture Overview</h2>
             <p style="margin-bottom: 30px; color: #a0a0a0; line-height: 1.8;">
                 A typical CNN consists of convolutional layers for feature extraction, pooling layers for dimensionality reduction, 
-                and fully connected layers for classification. The FC layers come at the end, transforming learned features into final predictions.
+                and fully connected layers for classification. The Fully Connected layers come at the end, transforming learned features into final predictions.
             </p>
             
             <div class="cnn-architecture">
@@ -369,39 +369,6 @@
                         </div>
                     </div>
                     <span class="layer-label">Fully Connected Layers</span>
-                </div>
-            </div>
-        </section>
-
-        <!-- Data Flow -->
-        <section class="section">
-            <h2>Data Flow Through FC Layers</h2>
-            
-            <div class="process-flow">
-                <div class="process-step">
-                    <div class="step-number">1</div>
-                    <div class="step-title">Flatten</div>
-                    <div class="step-desc">Convert 3D feature maps to 1D vector</div>
-                </div>
-                <div class="process-step">
-                    <div class="step-number">2</div>
-                    <div class="step-title">Linear Transform</div>
-                    <div class="step-desc">Multiply by weight matrix</div>
-                </div>
-                <div class="process-step">
-                    <div class="step-number">3</div>
-                    <div class="step-title">Add Bias</div>
-                    <div class="step-desc">Add bias to each neuron</div>
-                </div>
-                <div class="process-step">
-                    <div class="step-number">4</div>
-                    <div class="step-title">Activation</div>
-                    <div class="step-desc">Apply non-linear function</div>
-                </div>
-                <div class="process-step">
-                    <div class="step-number">5</div>
-                    <div class="step-title">Output</div>
-                    <div class="step-desc">Softmax for classification</div>
                 </div>
             </div>
         </section>
